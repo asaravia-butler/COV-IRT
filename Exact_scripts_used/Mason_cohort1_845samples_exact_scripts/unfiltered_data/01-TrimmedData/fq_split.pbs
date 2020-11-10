@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -l select=4:ncpus=24:model=has
+#PBS -l walltime=72:00:00
+#PBS -N COVIRT_fq_split_unfiltered
+#PBS -q covid19
+#PBS -m abe
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+start=$(date +%s)
+echo "start time: $start"
+echo "ran on node: "
+cat $PBS_NODEFILE
+
+cat samples.txt | parallel -j 20 -k -u --sshloginfile $PBS_NODEFILE "cd $PWD;./fq_split.sh {} > ./fq_split_stdout/out_{} 2>&1"
+
+end=$(date +%s)
+echo "end time: $end"
+runtime_s=$(echo $(( end - start )))
+echo "total run time(s): $runtime_s"
+sec_per_min=60
+sec_per_hr=3600
+runtime_m=$(echo "scale=2; $runtime_s / $sec_per_min;" | bc)
+echo "total run time(m): $runtime_m"
+runtime_h=$(echo "scale=2; $runtime_s / $sec_per_hr;" | bc)
+echo "total run time(h): $runtime_h"
