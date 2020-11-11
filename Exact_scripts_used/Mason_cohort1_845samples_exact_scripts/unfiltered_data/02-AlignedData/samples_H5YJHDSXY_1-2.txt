@@ -1,0 +1,10 @@
+COVSUBJ_0116_1_P_WC_all-reads
+COVSUBJ_0144_1_P_WC_all-reads
+COVSUBJ_0145_1_P_WC_all-reads
+COVSUBJ_0147_1_N_WC_all-reads
+COVSUBJ_0156_1_N_WC_all-reads
+COVSUBJ_0157_1_N_WC_all-reads
+NegWC_1_WC_all-reads
+NegWC_2_WC_all-reads
+PosWC_1_WC_all-reads
+PosWC_2_WC_all-reads
