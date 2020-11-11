@@ -1,8 +1,8 @@
 print("Make STAR counts table")
 print("")
 
-work_dir="/nobackupp13/asaravia/COVIRT_all_data/processing_scripts/02-AlignedData"
-align_dir="/nobackupp13/asaravia/COVIRT_all_data/02-AlignedData/STAR_counts"
+work_dir="/path/to/processing_scripts/02-AlignedData"
+align_dir="/path/to/02-AlignedData/STAR_counts"
 
 setwd(file.path(work_dir))
 
