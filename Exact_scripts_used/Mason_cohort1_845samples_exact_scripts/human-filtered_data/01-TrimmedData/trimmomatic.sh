@@ -11,7 +11,7 @@ echo "start time: $start"
 in_dir=/path/to/00-RawData/Fastq
 trimlog_dir=/path/to/01-TrimmedData/Trimming_Reports
 out_dir=/path/to/01-TrimmedData/Fastq
-adapter_dir=/path/to/anaconda3/envs/COVIRT_fastq_to_bam/share/trimmomatic/adapters
+adapter_dir=/path/to/trimmomatic/adapters
 
 call="trimmomatic PE \
 -threads 4 \
