@@ -13,8 +13,8 @@ out_dir=/path/to/01-TrimmedData/Fastq_RG
 
 mkdir $out_dir/$1
 
-module load /path/to/hsp/COVID19/anaconda3.modulefile
-cd /path/to/hsp/COVID19/gdc-fastq-splitter
+module load /path/to/COVID19/anaconda3.modulefile
+cd /path/to/COVID19/gdc-fastq-splitter
 source ./path/to/bin/activate
 
 echo "gdc-fastq-splitter version:"
