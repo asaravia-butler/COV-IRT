@@ -1,0 +1,37 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -l select=1:ncpus=24:model=has
+#PBS -l walltime=10:00:00
+#PBS -N COVIRT_RSEM_index
+#PBS -q covid19
+#PBS -m abe
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+start=$(date +%s)
+echo "start time: $start"
+echo "ran on node: "
+cat $PBS_NODEFILE 
+
+genome_files_dir=/path/to/genome_files/Homo_sapiens/ensembl_release100
+RSEM_index_dir=/path/to/RSEM_Indices
+
+call="rsem-prepare-reference --gtf $genome_files_dir/Homo_sapiens.GRCh38.100.gtf \
+$genome_files_dir/Homo_sapiens.GRCh38.dna.primary_assembly.fa \
+$RSEM_index_dir/Homo_sapiens/Hsapiens"
+
+echo $call
+eval $call
+
+end=$(date +%s)
+echo "end time: $end"
+runtime_s=$(echo $(( end - start )))
+echo "total run time(s): $runtime_s"
+sec_per_min=60
+sec_per_hr=3600
+runtime_m=$(echo "scale=2; $runtime_s / $sec_per_min;" | bc)
+echo "total run time(m): $runtime_m"
+runtime_h=$(echo "scale=2; $runtime_s / $sec_per_hr;" | bc)
+echo "total run time(h): $runtime_h"
