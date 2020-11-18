@@ -1,0 +1,78 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -l select=4:ncpus=24:model=has
+#PBS -l walltime=72:00:00
+#PBS -N COVIRT_GATK_calls2-6_human-filtered_451-845
+#PBS -q covid19
+#PBS -J 451-845
+#PBS -m abe
+#PBS -j oe
+#PBS -koed
+
+cd $PBS_O_WORKDIR
+
+start=$(date +%s)
+echo "start time: $start"
+echo "ran on node: "
+cat $PBS_NODEFILE
+echo "My PBS_ARRAY_INDEX_ID: " $PBS_ARRAY_INDEX
+
+gatk_path=/path/to/anaconda3/envs/COVIRT_GATK/bin
+in_dir=/path/to/02-AlignedData
+inter_dir=/path/to/GATK_analysis/03-GATKIntermediates
+out_dir=/path/to/GATK_analysis/04-GATKOutput
+
+genome_ref=/path/to/genome_files/Homo_sapiens/ensembl_release100
+vcf_ref=/path/to/genome_files/Homo_sapiens/ensembl_release100/vcf_files
+
+
+module use /path/to/hsp/COVID19
+module load R-3.6.0.modulefile
+
+
+sample=$(cat samples.txt | sed -n ${PBS_ARRAY_INDEX}p)
+
+echo "SAMPLE: ${sample}"
+
+
+call2='$gatk_path/gatk --java-options "-Xmx100G" SplitNCigarReads -R $genome_ref/Homo_sapiens.GRCh38.dna.primary_assembly.fa -I $inter_dir/${sample}/${sample}_marked_duplicates.bam -O $inter_dir/${sample}/${sample}_Split.bam'
+
+echo $call2
+eval $call2
+
+
+call3='$gatk_path/gatk --java-options "-Xmx100G" BaseRecalibrator -I $inter_dir/${sample}/${sample}_Split.bam -R $genome_ref/Homo_sapiens.GRCh38.dna.primary_assembly.fa --known-sites $vcf_ref/Homo_sapiens_assembly38.ens100.known_indels.vcf.gz --known-sites $vcf_ref/dbSNP_v153_ens.vcf.gz -O $inter_dir/${sample}/${sample}_recal_data.table --sequence-dictionary $genome_ref/Homo_sapiens.GRCh38.dna.primary_assembly.dict'
+
+echo $call3
+eval $call3
+
+
+call4='$gatk_path/gatk --java-options "-Xmx100G" AnalyzeCovariates -bqsr $inter_dir/${sample}/${sample}_recal_data.table -plots $inter_dir/${sample}/${sample}_AnalyzeCovariates.pdf'
+
+echo $call4
+eval $call4
+
+
+call5='$gatk_path/gatk --java-options "-Xmx100G" ApplyBQSR -R $genome_ref/Homo_sapiens.GRCh38.dna.primary_assembly.fa -I $inter_dir/${sample}/${sample}_Split.bam --bqsr-recal-file $inter_dir/${sample}/${sample}_recal_data.table -O $inter_dir/${sample}/${sample}_BSQR-applied.out.bam'
+
+echo $call5
+eval $call5
+
+
+## Remaining calls will be done for each reference chromosome ##
+
+mkdir ./GATK_calls2-6_stdout/${sample}
+
+cat chromosomes_ensembl.txt | parallel -j 4 -k -u --sshloginfile $PBS_NODEFILE "cd $PWD;./GATK_call6.sh {} ${sample} > ./GATK_calls2-6_stdout/${sample}/out_{} 2>&1"
+
+end=$(date +%s)
+echo "end time: $end"
+runtime_s=$(echo $(( end - start )))
+echo "total run time(s): $runtime_s"
+sec_per_min=60
+sec_per_hr=3600
+runtime_m=$(echo "scale=2; $runtime_s / $sec_per_min;" | bc)
+echo "total run time(m): $runtime_m"
+runtime_h=$(echo "scale=2; $runtime_s / $sec_per_hr;" | bc)
+echo "total run time(h): $runtime_h"
