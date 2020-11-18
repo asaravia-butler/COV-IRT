@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -l select=1:ncpus=24:model=has
+#PBS -l walltime=720:00:00
+#PBS -N COVIRT_GATK_call10_human-filtered
+#PBS -q covid19
+#PBS -m abe
+#PBS -j oe
+#PBS -koed
+
+cd $PBS_O_WORKDIR
+
+start=$(date +%s)
+echo "start time: $start"
+echo "ran on node: "
+cat $PBS_NODEFILE
+
+gatk_path=/path/to/anaconda3/envs/COVIRT_GATK/bin
+in_dir=/path/to/02-AlignedData
+inter_dir=/path/to/GATK_analysis/03-GATKIntermediates
+out_dir=/path/to/GATK_analysis/04-GATKOutput
+
+genome_ref=/path/to/genome_files/Homo_sapiens/ensembl_release100
+vcf_ref=/path/to/genome_files/Homo_sapiens/ensembl_release100/vcf_files
+
+call10='$gatk_path/gatk MergeVcfs --INPUT $out_dir/all_samples/chr1/chr1_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr2/chr2_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr3/chr3_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr4/chr4_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr5/chr5_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr6/chr6_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr7/chr7_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr8/chr8_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr9/chr9_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr10/chr10_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr11/chr11_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr12/chr12_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr13/chr13_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr14/chr14_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr15/chr15_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr16/chr16_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr17/chr17_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr18/chr18_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr19/chr19_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr20/chr20_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr21/chr21_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chr22/chr22_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chrX/chrX_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chrY/chrY_VarFilt_output.vcf.gz \
+--INPUT $out_dir/all_samples/chrMT/chrMT_VarFilt_output.vcf.gz \
+--OUTPUT $out_dir/all_samples/merged_chr.vcf.gz \
+--SEQUENCE_DICTIONARY $genome_ref/Homo_sapiens.GRCh38.dna.primary_assembly.dict'
+
+echo $call10
+eval $call10
+
+end=$(date +%s)
+echo "end time: $end"
+runtime_s=$(echo $(( end - start )))
+echo "total run time(s): $runtime_s"
+sec_per_min=60
+sec_per_hr=3600
+runtime_m=$(echo "scale=2; $runtime_s / $sec_per_min;" | bc)
+echo "total run time(m): $runtime_m"
+runtime_h=$(echo "scale=2; $runtime_s / $sec_per_hr;" | bc)
+echo "total run time(h): $runtime_h"
