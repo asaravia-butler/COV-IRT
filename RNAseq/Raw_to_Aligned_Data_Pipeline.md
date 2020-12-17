@@ -282,7 +282,7 @@ STAR --twopassMode Basic \
 
 **Input Data:**
 - STAR genome reference (output from step 4b)
-- *flowcell_lane#_R*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
 
 **Output Data:**
 - *Aligned.sortedByCoord.out.bam# (sorted mapping to genome)
