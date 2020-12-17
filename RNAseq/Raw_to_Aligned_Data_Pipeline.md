@@ -23,10 +23,10 @@
   - [**6. Sort and Index Genome-Aligned Data**]()
     - [**6a. Sort Genome-Aligned Data**]()
     - [**6b. Index Sorted Genome-Aligned Data**]()
-  
-<br>
 
 ---
+
+<br>
 
 # Software used  
 
@@ -41,9 +41,9 @@
 
 >**\*** Exact versions used to process specific cohorts are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory. 
 
-<br>
-
 ---
+
+<br>
 
 # General processing overview with example commands  
 
