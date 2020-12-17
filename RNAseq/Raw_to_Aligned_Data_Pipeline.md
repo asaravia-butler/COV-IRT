@@ -165,8 +165,8 @@ gdc-fastq-splitter -o /path/to/ouput/split/trimmed/reads/${sample}/${sample}_ \
 - *_P_trimmed.fq.gz (paired trimmed reads from step 2a)
 
 **Output Data:**
-- *flowcell_lane#_R*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number)
-- *flowcell_lane#_R*.report.jason (trimmed reads splitting report)
+- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number)
+- \*flowcell_lane#_R\*.report.jason (trimmed reads splitting report)
 
 ---
 
@@ -199,6 +199,8 @@ zcat Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz Sars_cov_2.ASM985889v3.dna.p
 
 zcat Homo_sapiens.GRCh38.100.gtf.gz Sars_cov_2.ASM985889v3.100.gtf.gz > Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf 
 ```
+
+<br>
 
 ### 4b. Build STAR Reference  
 
@@ -285,12 +287,15 @@ STAR --twopassMode Basic \
 - \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
 
 **Output Data:**
-- *Aligned.sortedByCoord.out.bam# (sorted mapping to genome)
-- *Aligned.toTranscriptome.out.bam# (sorted mapping to transcriptome)
-- *Log.final.out# (log file conting alignment info/stats such as reads mapped, etc)
+- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
+- *Aligned.toTranscriptome.out.bam (sorted mapping to transcriptome)
+- *Chimeric.out.junction (chimerically aligned read data)
+- *Chimeric.out.sam (sam file containing chimeric alignments)
+- *Log.final.out (log file conting alignment info/stats such as reads mapped, etc)
 - *Log.out
 - *Log.progress.out
-- *SJ.out.tab\#
+- *ReadsPerGene.out.tab (STAR read counts per gene)
+- *SJ.out.tab (high confidence collapsed splice junctions)
 - *_STARgenome (directory containing the following:)
   - sjdbInfo.txt
   - sjdbList.out.tab
@@ -299,3 +304,49 @@ STAR --twopassMode Basic \
   - SJ.out.tab
 - *_STARtmp (directory containing the following:)
   - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
+
+<br>
+
+### 5b. Generate STAR Counts Table
+
+```R
+print("Make STAR counts table")
+print("")
+
+work_dir="/path/to/directory/containing/samples.txt/file"
+align_dir="/path/to/directory/containing/STAR/counts/data"
+
+setwd(file.path(work_dir))
+
+### Pull in sample names ###
+study <- read.csv(Sys.glob(file.path(work_dir,"samples.txt")), header = FALSE, row.names = 1, stringsAsFactors = TRUE)
+
+##### Import Data
+ff <- list.files(file.path(align_dir),pattern = "ReadsPerGene.out.tab", full.names = TRUE)
+# Remove the first 4 lines
+counts.files <- lapply( ff, read.table, skip = 4 )
+# Get counts aligned to the second, reverse, strand
+counts <- as.data.frame( sapply( counts.files, function(x) x[ , 4 ] ) )
+# Add column and row names
+colnames(counts) <- rownames(study)
+row.names(counts) <- counts.files[[1]]$V1
+
+
+##### Export unnormalized counts table
+setwd(file.path(align_dir))
+write.csv(counts,file='STAR_Unnormalized_Counts.csv')
+
+
+## print session info ##
+print("Session Info below: ")
+print("")
+sessionInfo()
+```
+
+**Input Data:**
+- *ReadsPerGene.out.tab (STAR read counts per gene from step 5a)
+- samples.txt (text file containing a single column list of all samples)
+
+**Output Data:**
+- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
+- STAR_Unnormalized_Counts.csv (table containing STAR read counts per gene for all samples)
