@@ -21,7 +21,7 @@
     - [**4b. Build STAR Reference**]()
   - [**5. Align Reads to Reference Genome with STAR and Generate STAR Counts Table**]()
     - [**5a. Align Reads to Reference Genome with STAR**]()
-    - [**5b. Generate STAR Counts Table**]() 
+    - [**5b. Generate STAR Counts Table in R**]() 
   - [**6. Sort and Index Genome-Aligned Data**]()
     - [**6a. Sort Genome-Aligned Data**]()
     - [**6b. Index Sorted Genome-Aligned Data**]()
@@ -307,7 +307,7 @@ STAR --twopassMode Basic \
 
 <br>
 
-### 5b. Generate STAR Counts Table
+### 5b. Generate STAR Counts Table in R
 
 ```R
 print("Make STAR counts table")
@@ -350,3 +350,41 @@ sessionInfo()
 **Output Data:**
 - *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
 - STAR_Unnormalized_Counts.csv (table containing STAR read counts per gene for all samples)
+
+---
+
+<br>
+
+## 6. Sort and Index Genome-Aligned Data
+
+Due to issues with the sorted genome bam file from STAR (step 5a) this file must be subsequently sorted and indexed with samtools prior to downstream analyses.
+
+### 6a. Sort Genome-Aligned Data
+
+```
+samtools sort -m AvailableMemoryPerThread \
+	--threads NumberOfThreads \
+  -o /path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord_sorted.out.bam \
+	/path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord.out.bam
+```
+
+**Input Data:**
+- *Aligned.sortedByCoord.out.bam (sorted mapping to genome file from step 5a)
+
+**Output Data:**
+- *Aligned.sortedByCoord_sorted.out.bam (samtools sorted mapping to genome file)
+
+<br>
+
+### 6b. Index Sorted Genome-Aligned Data
+
+```
+samtools index -@ NumberOfThreads \
+  /path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord_sorted.out.bam 
+```
+
+**Input Data:**
+- *Aligned.sortedByCoord_sorted.out.bam (samtools sorted mapping to genome file from step 6a)
+
+**Output Data:**
+- *Aligned.sortedByCoord_sorted.out.bam.bai (samtools sorted mapping to genome index)
