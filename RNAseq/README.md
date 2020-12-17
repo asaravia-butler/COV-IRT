@@ -6,10 +6,10 @@ The COV-IRT workflow for processing Illumina RNA-sequencing data from COVID-19 s
 
 ## RNAseq Workflow 
 
-<img src="RNAseq_workflow.png" align="center" alt=""/>
+<img src="RNAseq_workflow.png" align="center" width="100%" height="100%" />
 
 ---
 
 ## RNAseq Pipelines Overview 
 
-<img src="RNAseq_pipelines.png" align="center" width="720" height="405" />
+<img src="RNAseq_pipelines.png" align="center" width="100%" height="100%" />
