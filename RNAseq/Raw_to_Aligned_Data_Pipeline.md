@@ -1,6 +1,6 @@
 # Raw to Aligned Data Processing Pipeline
 
-> **This page holds an overview and instructions for how to generate alignment and STAR count data from raw Illumina RNA-sequencing data of COVID-19 samples. Exact processing commands used for specific cohorts of samples are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory.**  
+> **This page holds an overview and instructions for how COV-IRT generates alignment and STAR count data from raw Illumina RNA-sequencing data of COVID-19 samples. Exact processing commands used for specific cohorts of samples are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory.**  
 
 ---
 
@@ -8,20 +8,21 @@
 
 - [**Software used**](#software-used)
 - [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
-  - **1. Raw Data QC**
+  - [**1. Raw Data QC**]()
     - [**1a. Raw Data QC**](#1a-raw-data-qc)
     - [**1b. Compile Raw Data QC**](#1b-compile-raw-data-qc)
-  - **2. Trim/Filter Raw Data and Trimmed Data QC**
+  - [**2. Trim/Filter Raw Data and Trimmed Data QC**]()
     - [**2a. Trim/Filter Raw Data**](#2a-trimfilter-raw-data)
     - [**2b. Trimmed Data QC**](#2b-trimmed-data-qc)
     - [**2c. Compile Trimmed Data QC**](#2c-compile-trimmed-data-qc)
-  - [**3. Build STAR Reference**](#3-build-star-reference)
-  - [**4. Align reads to reference genome with STAR**](#4-align-reads-to-reference-genome-with-star)
-  - [**5. Build RSEM Reference**](#5-build-rsem-reference)
-  - [**6. Count Aligned Reads with RSEM**](#6-count-aligned-reads-with-rsem)
-  - [**7. Normalize Read Counts, Perform Differential Gene Expression Analysis, and Add Gene Annotations in R**](#7-normalize-read-counts-perform-differential-gene-expression-analysis-and-add-gene-annotations-in-r)
-    - [**7a. For Datasets with ERCC Spike-In**](#7a-for-datasets-with-ercc-spike-in)
-    - [**7b. For Datasets without ERCC Spike-In**](#7b-for-datasets-without-ercc-spike-in)
+  - [**3. Split Fastq Files Based on Sequencing Run/Lane]()
+  - [**4. Retrieve Genome/Annotation Files and Build STAR Reference**]()
+    - [**4a. Get Genome and Annotation Files**]()
+    - [**4b. Build STAR Reference**]()
+  - [**5. Align Reads to Reference Genome with STAR**](#5-align-reads-to-reference-genome-with-star)
+  - [**6. Sort and Index Genome-Aligned Data**]()
+    - [**6a. Sort Genome-Aligned Data**]()
+    - [**6b. Index Sorted Genome-Aligned Data**]()
   
 ---
 
@@ -31,46 +32,29 @@
 |:------|:------:|:-------------|
 |FastQC|`fastqc -v`|[https://www.bioinformatics.babraham.ac.uk/projects/fastqc/](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)|
 |MultiQC|`multiqc -v`|[https://multiqc.info/](https://multiqc.info/)|
-|Cutadapt|`cutadapt --version`|[https://cutadapt.readthedocs.io/en/stable/](https://cutadapt.readthedocs.io/en/stable/)|
-|TrimGalore!|`trim_galore -v`|[https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)|
+|Trimmomatic|`trimmomatic -version`|[http://www.usadellab.org/cms/?page=trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)|
+|gdc-fastq-splitter|`gdc-fastq-splitter --version`|[https://github.com/kmhernan/gdc-fastq-splitter](https://github.com/kmhernan/gdc-fastq-splitter)|
 |STAR|`STAR --version`|[https://github.com/alexdobin/STAR](https://github.com/alexdobin/STAR)|
-|RSEM|`rsem-calculate-expression --version`|[https://github.com/deweylab/RSEM](https://github.com/deweylab/RSEM)|
-|Bioconductor|`BiocManager::version()`|[https://bioconductor.org](https://bioconductor.org)|
-|DESeq2|`packageVersion("DESeq2")`|[https://bioconductor.org/packages/release/bioc/html/DESeq2.html](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)|
-|tximport|`packageVersion("tximport")`|[https://bioconductor.org/packages/release/bioc/html/tximport.html](https://bioconductor.org/packages/release/bioc/html/tximport.html)|
-|tidyverse|`packageVersion("tidyverse")`|[https://www.tidyverse.org](https://www.tidyverse.org)|
-|Risa|`packageVersion("Risa")`|[https://www.bioconductor.org/packages/release/bioc/html/Risa.html](https://www.bioconductor.org/packages/release/bioc/html/Risa.html)|
-|STRINGdb|`packageVersion("STRINGdb")`|[https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html](https://www.bioconductor.org/packages/release/bioc/html/STRINGdb.html)|
-|PANTHER.db|`packageVersion("PANTHER.db")`|[https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html](https://bioconductor.org/packages/release/data/annotation/html/PANTHER.db.html)|
-|org.Hs.eg.db|`packageVersion("org.Hs.eg.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html)|
-|org.Mm.eg.db|`packageVersion("org.Mm.eg.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Mm.eg.db.html)|
-|org.Dm.eg.db|`packageVersion("org.Dm.eg.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Dm.eg.db.html)|
-|org.Ce.eg.db|`packageVersion("org.Ce.eg.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Ce.eg.db.html)|
-|org.At.tair.db|`packageVersion("org.At.tair.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.At.tair.db.html)|
-|org.EcK12.eg.db|`packageVersion("org.EcK12.eg.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.EcK12.eg.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.EcK12.eg.db.html)|
-|org.Sc.sgd.db|`packageVersion("org.Sc.sgd.db")`|[https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html](https://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html)|
+|Samtools|`samtools --version`|[http://www.htslib.org/](http://www.htslib.org/)|
 
->**\*** Exact versions are available along with the processing commands for each specific dataset in the [GLDS_Processing_Scripts](GLDS_Processing_Scripts) sub-directory. 
+>**\*** Exact versions used to process specific cohorts are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory. 
 
 ---
 
 # General processing overview with example commands  
 
-> Exact processing commands for specific datasets are provided in the [GLDS_Processing_Scripts](GLDS_Processing_Scripts) sub-directory and are also provided with their processed data in the [GeneLab Data Systems (GLDS) repository](https://genelab-data.ndc.nasa.gov/genelab/projects).  
+> Exact processing commands used for specific cohorts are provided in the [Exact_scripts_used](Exact_scripts_used) sub-directory.  
 
 ---
 
-## 1a. Raw Data QC  
+## 1. Raw Data QC
+
+### 1a. Raw Data QC  
 
 ```
 fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 ```
 
-**Parameter Definitions:**
-
-* `-o` – the output directory to store results
-* `*.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces inbetween them
-
 **Input Data:**
 - *fastq.gz (raw reads)
 
@@ -80,76 +64,66 @@ fastqc -o /path/to/raw_fastqc/output/directory *.fastq.gz
 
 <br>
 
-## 1b. Compile Raw Data QC  
+### 1b. Compile Raw Data QC  
 
 ```
-multiqc -n raw_multiqc_report -o /path/to/raw_multiqc/output/directory /path/to/directory/containing/raw_fastqc/files
+multiqc -n raw_multiqc -o /path/to/raw_multiqc/output/directory /path/to/directory/containing/raw_fastqc/files
 ```
-
-**Parameter Definitions:**
-
-* `-n` - prefix name for output files
-* `-o` – the output directory to store results
-* `/path/to/directory/containing/raw_fastqc/files` – the directory holding the output data from the fastqc run, provided as a positional argument
 
 **Input Data:**
-- *fastqc.html (FastQC report)
-- *fastqc.zip (FastQC data)
+- *fastqc.zip (FastQC data from step 1a)
 
 **Output Data:**
-- raw_multiqc_report.html (multiqc report)
-- raw_multiqc_report_data (directory containing multiqc data)
+- raw_multiqc.html (multiqc report)
+- raw_multiqc_data (directory containing multiqc data)
 
 <br>
 
 ---
 
-## 2a. Trim/Filter Raw Data  
+## 2. Trim/Filter Raw Data and Trimmed Data QC
+
+### 2a. Trim/Filter Raw Data  
 
 ```
-trim_galore --gzip \
-  --path_to_cutadapt /path/to/cutadapt \
-  --phred33 \
-  --illumina \ # if adapters are not illumina, replace with adapters used
-  --output_dir /path/to/TrimGalore/output/directory \
-  --paired \ # only for PE studies, remove this paramater if raw data are SE
-  sample1_R1_raw.fastq.gz sample1_R2_raw.fastq.gz sample2_R1_raw.fastq.gz sample2_R2_raw.fastq.gz
-# if SE, replace the last line with only the forward reads (R1) of each sample
-
+trimmomatic PE \
+  -threads NumberOfThreads \
+  -phred33 \
+  -trimlog /path/to/trimming/log/outputs/${sample}_trimming.log \
+  -summary /path/to/trimming/log/outputs/${sample}_trimming_summary.txt \
+  -validatePairs \
+  /path/to/raw/reads/${sample}.R1.fastq.gz \ 
+  /path/to/raw/reads/${sample}.R2.fastq.gz \
+  /path/to/ouput/trimmed/reads/${sample}_R1_P_trimmed.fq.gz \
+  /path/to/ouput/trimmed/reads/${sample}_R1_U_trimmed.fq.gz \
+  /path/to/ouput/trimmed/reads/${sample}_R2_P_trimmed.fq.gz \
+  /path/to/ouput/trimmed/reads/${sample}_R2_U_trimmed.fq.gz \
+  ILLUMINACLIP:/path/to/trimmomatic/adapter/fasta/files/TruSeq3-PE-2.fa:2:30:10:2:keepBothReads \
+  LEADING:20 \
+  TRAILING:20 \
+  MINLEN:15
 ```
-
-**Parameter Definitions:**
-
-* `--gzip` – compress the output files with `gzip`
-* `--path_to_cutadapt` - specify path to cutadapt software if it is not in your `$PATH`
-* `--phred33` - instructs cutadapt to use ASCII+33 quality scores as Phred scores for quality trimming
-* `--illumina` - defines the adapter sequence to be trimmed as the first 13bp of the Illumina universal adapter `AGATCGGAAGAGC`
-* `--output_dir` - the output directory to store results
-* `--paired` - indicates paired-end reads - both reads, forward (R1) and reverse (R2) must pass length threshold or else both reads are removed
-* `sample1_R1_raw.fastq.gz sample1_R2_raw.fastq.gz sample2_R1_raw.fastq.gz sample2_R2_raw.fastq.gz` – the input reads are specified as a positional argument, paired-end read files are listed pairwise such that the forward reads (*R1_raw.fastq.gz) are immediately followed by the respective reverse reads (*R2_raw.fastq.gz) for each sample
 
 **Input Data:**
 - *fastq.gz (raw reads)
 
 **Output Data:**
-- *fastq.gz (trimmed reads)
-- *trimming_report.txt (trimming report)
+- *_P_trimmed.fq.gz (paired trimmed reads)
+- *_U_trimmed.fq.gz (unpaired trimmed reads)
+- *trimming.log (trimming log file)
+- *trimming_summary.txt (trimming summary file)
 
 <br>
 
-## 2b. Trimmed Data QC  
+### 2b. Trimmed Data QC  
 
 ```
-fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
+fastqc -o /path/to/trimmed_fastqc/output/directory *trimmed.fq.gz
 ```
-
-**Parameter Definitions:**
-
-* `-o` – the output directory to store results
-* `*.fastq.gz` – the input reads are specified as a positional argument, and can be given all at once with wildcards like this, or as individual arguments with spaces inbetween them
 
 **Input Data:**
-- *fastq.gz (trimmed reads)
+- *_P_trimmed.fq.gz (paired trimmed reads from step 2a)
+- *_U_trimmed.fq.gz (unpaired trimmed reads from step 2a)
 
 **Output Data:**
 - *fastqc.html (FastQC report)
@@ -157,31 +131,31 @@ fastqc -o /path/to/trimmed_fastqc/output/directory *.fastq.gz
 
 <br>
 
-## 2c. Compile Trimmed Data QC  
+### 2c. Compile Trimmed Data QC  
 
 ```
-multiqc -n trimmed_multiqc_report -o /path/to/trimmed_multiqc/output/directory /path/to/directory/containing/trimmed_fastqc/files
+multiqc -n trimmed_multiqc -o /path/to/trimmed_multiqc/output/directory /path/to/directory/containing/trimmed_fastqc/files
 ```
-
-**Parameter Definitions:**
-
-* `-n` - prefix name for output files
-* `-o` – the output directory to store results
-* `/path/to/directory/containing/trimmed_fastqc/files` – the directory holding the output data from the fastqc run, provided as a positional argument
 
 **Input Data:**
-- *fastqc.html (FastQC report)
-- *fastqc.zip (FastQC data)
+- *fastqc.zip (FastQC data from step 2b)
 
 **Output Data:**
-- trimmed_multiqc_report.html (multiqc report)
-- trimmed_multiqc_report_data (directory containing multiqc data)
+- trimmed_multiqc.html (multiqc report)
+- trimmed_multiqc_data (directory containing multiqc data)
 
 <br>
 
 ---
 
-## 3. Build STAR Reference  
+## 3. Split Fastq Files Based on Sequencing Run/Lane
+
+
+<br>
+
+---
+
+## 4. Build STAR Reference  
 
 ```
 STAR --runThreadN NumberOfThreads \
