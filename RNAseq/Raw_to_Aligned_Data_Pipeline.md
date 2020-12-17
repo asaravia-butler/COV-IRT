@@ -215,6 +215,7 @@ STAR --runThreadN NumberOfThreads \
 ```
 
 **Input Data:** 
+
 For processing human-filtered data
 - Homo_sapiens.GRCh38.dna.primary_assembly.fa (genome sequence)
 - Homo_sapiens.GRCh38.100.gtf (genome annotation)
