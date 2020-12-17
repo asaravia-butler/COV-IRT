@@ -15,7 +15,7 @@
     - [**2a. Trim/Filter Raw Data**](#2a-trimfilter-raw-data)
     - [**2b. Trimmed Data QC**](#2b-trimmed-data-qc)
     - [**2c. Compile Trimmed Data QC**](#2c-compile-trimmed-data-qc)
-  - [**3. Split Fastq Files Based on Sequencing Run/Lane]()
+  - [**3. Split Fastq Files Based on Sequencing Run/Lane**]()
   - [**4. Retrieve Genome/Annotation Files and Build STAR Reference**]()
     - [**4a. Get Genome and Annotation Files**]()
     - [**4b. Build STAR Reference**]()
@@ -24,6 +24,8 @@
     - [**6a. Sort Genome-Aligned Data**]()
     - [**6b. Index Sorted Genome-Aligned Data**]()
   
+<br>
+
 ---
 
 # Software used  
@@ -38,6 +40,8 @@
 |Samtools|`samtools --version`|[http://www.htslib.org/](http://www.htslib.org/)|
 
 >**\*** Exact versions used to process specific cohorts are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory. 
+
+<br>
 
 ---
 
