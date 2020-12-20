@@ -1,6 +1,6 @@
 # RSEM Counts Processing Pipeline
 
-> **This page holds an overview and instructions for how COV-IRT generates RSEM count data from raw Illumina RNA-sequencing data of COVID-19 samples. This pipeline uses the *Aligned.toTranscriptome.out.bam files generated from [step 5a of the 'Raw to Aligned Data Pipeline'](Raw_to_Aligned_Data_Pipeline.md#5a-align-reads-to-reference-genome-with-star). Exact processing commands used for specific cohorts of samples are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory.**  
+> **This page holds an overview and instructions for how COV-IRT generates RSEM count data from raw Illumina RNA-sequencing data of COVID-19 samples. This pipeline uses the \*Aligned.toTranscriptome.out.bam files generated from [step 5a of the 'Raw to Aligned Data Pipeline'](Raw_to_Aligned_Data_Pipeline.md#5a-align-reads-to-reference-genome-with-star). Exact processing commands used for specific cohorts of samples are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory.**  
 
 ---
 
