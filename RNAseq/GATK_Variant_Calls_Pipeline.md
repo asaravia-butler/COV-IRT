@@ -8,26 +8,26 @@
 
 - [**Software used**](#software-used)
 - [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
-  - [**1. Retrieve and Index Genome Files and Create Reference Dictionary**]()
-    - [**1a. Get Genome Files**]()
-    - [**1b. Index Genome Files**]()
-    - [**1c. Create Reference Dictionaries**]()
-  - [**2. Retrieve Variant Call Reference Files and Convert to Match Genome IDs**]()
-    - [**2a. Get Variant Call Reference Files**]()
-    - [**2b. Convert Variant Call Reference Files to Match Genome IDs then Index**]()
-  - [**3. Define Paths to Directories Containing Input, Reference, Intermediate, and Output Files**]()
-  - [**4. Mark and Index Duplicate Reads**]()
-    - [**4a. Mark Duplicate Reads**]()
-    - [**4b. Index Duplicate Reads**]()
-  - [**5. Split Reads with N in Cigar**]()
-  - [**6. Generate Recalibration Table for Base Quality Score Recalibration**]()
-  - [**7. Evaluate and Compare Base Quality Score Recalibration Tables**]()
-  - [**8. Apply Base Quality Score Recalibration**]()
-  - [**9. Call Germline SNPs and Indels via Local Re-assembly of Haplotypes**]()
-  - [**10. Import VCFs to Genomics Database**]()
-  - [**11. Perform Joint Genotyping**]()
-  - [**12. Filter Variant Calls Based on Annotations**]()
-  - [**13. Combine Variant Files From Each Chromosome**]()
+  - [**1. Retrieve and Index Genome Files and Create Reference Dictionary**](#1-retrieve-and-index-genome-files-and-create-reference-dictionary)
+    - [**1a. Get Genome Files**](#1a-get-genome-files)
+    - [**1b. Index Genome Files**](#1b-index-genome-files)
+    - [**1c. Create Reference Dictionaries**](#1c-create-reference-dictionaries)
+  - [**2. Retrieve Variant Call Reference Files and Convert to Match Genome IDs**](#2-retrieve-variant-call-reference-files-and-convert-to-match-genome-ids)
+    - [**2a. Get Variant Call Reference Files**](#2a-get-variant-call-reference-files)
+    - [**2b. Convert Variant Call Reference Files to Match Genome IDs then Index**](#2b-convert-variant-call-reference-files-to-match-genome-ids-then-index)
+  - [**3. Define Paths to Directories Containing Input, Reference, Intermediate, and Output Files**](#3-define-paths-to-directories-containing-input-reference-intermediate-and-output-files)
+  - [**4. Mark and Index Duplicate Reads**](#4-mark-and-index-duplicate-reads)
+    - [**4a. Mark Duplicate Reads**](#4a-mark-duplicate-reads)
+    - [**4b. Index Duplicate Reads**](#4b-index-duplicate-reads)
+  - [**5. Split Reads with N in Cigar**](#5-split-reads-with-n-in-cigar)
+  - [**6. Generate Recalibration Table for Base Quality Score Recalibration**](#6-generate-recalibration-table-for-base-quality-score-recalibration)
+  - [**7. Evaluate and Compare Base Quality Score Recalibration Tables**](#7-evaluate-and-compare-base-quality-score-recalibration-tables)
+  - [**8. Apply Base Quality Score Recalibration**](#8-apply-base-quality-score-recalibration)
+  - [**9. Call Germline SNPs and Indels via Local Re-assembly of Haplotypes**](#9-call-germline-snps-and-indels-via-local-re-assembly-of-haplotypes)
+  - [**10. Import VCFs to Genomics Database**](#10-import-vcfs-to-genomics-database)
+  - [**11. Perform Joint Genotyping**](#11-perform-joint-genotyping)
+  - [**12. Filter Variant Calls Based on Annotations**](#12-filter-variant-calls-based-on-annotations)
+  - [**13. Combine Variant Files From Each Chromosome**](#13-combine-variant-files-from-each-chromosome)
 
 ---
 
@@ -86,6 +86,7 @@ samtools faidx /path/to/genome/file
 ```
 
 **Input Data:**
+
 For processing human-filtered data
 - Homo_sapiens.GRCh38.dna.primary_assembly.fa (genome sequence)
 
@@ -93,6 +94,7 @@ For processing unfiltered data
 - Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa (genome sequence)
 
 **Output Data:**
+
 For processing human-filtered data
 - Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai (genome index)
 
@@ -110,6 +112,7 @@ gatk --java-options "-Xmx100G" CreateSequenceDictionary \
 ```
 
 **Input Data:**
+
 For processing human-filtered data
 - Homo_sapiens.GRCh38.dna.primary_assembly.fa (genome sequence)
 
@@ -117,6 +120,7 @@ For processing unfiltered data
 - Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa (genome sequence)
 
 **Output Data:**
+
 For processing human-filtered data
 - Homo_sapiens.GRCh38.dna.primary_assembly.dict (genome dictionary)
 
@@ -147,7 +151,7 @@ wget https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-All.vcf.gz
 
 ### 2b. Convert Variant Call Reference Files to Match Genome IDs then Index 
 
-Convert human known indels file
+Convert human known indels file to match Ensembl genome IDs
 
 ```
 java -jar fgbio-1.2.0.jar UpdateVcfContigNames -i Homo_sapiens_assembly38.known_indels.vcf.gz \
@@ -160,7 +164,7 @@ java -jar fgbio-1.2.0.jar UpdateVcfContigNames -i Homo_sapiens_assembly38.known_
 tabix -p vcf Homo_sapiens_assembly38.ens100.known_indels.vcf.gz
 ```
 
-Convert human SNP database
+Convert human SNP database to match Ensembl genome IDs
 
 ```
 java -jar fgbio-1.2.0.jar UpdateVcfContigNames -i 00-All.vcf.gz \
@@ -174,6 +178,7 @@ tabix -p vcf dbSNP_v153_ens.vcf.gz
 ```
 
 **Input Data:**
+
 For human known indels 
 - Homo_sapiens_assembly38.known_indels.vcf.gz (human indels reference)
 
@@ -181,6 +186,7 @@ For human SNP database
 - 00-All.vcf.gz (human SNP database)
 
 **Output Data:**
+
 For human known indels 
 - Homo_sapiens_assembly38.ens100.known_indels.vcf.gz (human indels reference with ensembl IDs)
 - Homo_sapiens_assembly38.ens100.known_indels.vcf.gz.tbi (human indels index with ensembl IDs)
@@ -336,9 +342,9 @@ For processing unfiltered data
 **Output Data:**
 - *BSQR-applied.out.bam (BAM file containing the recalibrated read data)
 
----
-
 <br>
+
+---
 
 **In steps 9 - 12 chromosomes are split for parallel processing**
 
