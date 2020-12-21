@@ -27,7 +27,7 @@
   - [**10. Import VCFs to Genomics Database**]()
   - [**11. Perform Joint Genotyping**]()
   - [**12. Filter Variant Calls Based on Annotations**]()
-  - [**13. Combine Variant Files**]()
+  - [**13. Combine Variant Files From Each Chromosome**]()
 
 ---
 
@@ -317,56 +317,30 @@ gatk --java-options "-Xmx100G" AnalyzeCovariates -bqsr $inter_dir/${sample}/${sa
 ## 8. Apply Base Quality Score Recalibration
 
 ```
-STAR --twopassMode Basic \
-  --limitBAMsortRAM 65000000000 \
-  --genomeDir /path/to/STAR/genome/directory \
-  --outSAMunmapped Within \
-  --outFilterType BySJout \
-  --outSAMattributes NH HI AS nM NM MD jM jI MC ch \ #same as All
-  --outSAMattrRGline ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${index} LB:${sample} SM:${sample} , ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${index} LB:${sample} SM:${sample} \
-  --outFilterMultimapNmax 20 \
-  --outFilterMismatchNmax 999 \
-  --outFilterMismatchNoverReadLmax 0.04 \
-  --alignIntronMin 20 \
-  --alignIntronMax 1000000 \
-  --alignMatesGapMax 1000000 \ # for PE only
-  --alignSJoverhangMin 8 \
-  --alignSJDBoverhangMin 1 \
-  --sjdbScore 1 \
-  --readFilesCommand zcat \
-  --runThreadN NumberOfThreads \
-  --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
-  --chimOutJunctionFormat 1 \
-  --chimSegmentMin 20 \
-  --outSAMtype BAM SortedByCoordinate \
-  --quantMode TranscriptomeSAM GeneCounts \
-  --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-  --outFileNamePrefix /path/to/STAR/output/directory/${sample}/${sample}_ \
-  --readFilesIn /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R1.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R1.fq.gz /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R2.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R2.fq.gz
+gatk --java-options "-Xmx100G" ApplyBQSR -R $genome_ref/*.fa \
+  -I $inter_dir/${sample}/${sample}_Split.bam \
+  --bqsr-recal-file $inter_dir/${sample}/${sample}_recal_data.table \
+  -O $inter_dir/${sample}/${sample}_BSQR-applied.out.bam
 ```
 
 **Input Data:**
-- STAR genome reference (output from step 4b)
-- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+- *Split.bam (BAM file with reads split at N CIGAR elements and CIGAR strings updated, output from step 5)
+- *recal_data.table (text file containing the list of arguments used, tables with quantized qualities, tables containing recalibration by read group, quality score, and the optional covariates, output from step 6)
+
+For processing human-filtered data
+- Homo_sapiens.GRCh38.dna.primary_assembly.fa (genome sequence)
+
+For processing unfiltered data
+- Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa (genome sequence)
 
 **Output Data:**
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- *Aligned.toTranscriptome.out.bam (sorted mapping to transcriptome)
-- *Chimeric.out.junction (chimerically aligned read data)
-- *Chimeric.out.sam (sam file containing chimeric alignments)
-- *Log.final.out (log file conting alignment info/stats such as reads mapped, etc)
-- *Log.out
-- *Log.progress.out
-- *ReadsPerGene.out.tab (STAR read counts per gene)
-- *SJ.out.tab (high confidence collapsed splice junctions)
-- *_STARgenome (directory containing the following:)
-  - sjdbInfo.txt
-  - sjdbList.out.tab
-- *_STARpass1 (directory containing the following:)
-  - Log.final.out
-  - SJ.out.tab
-- *_STARtmp (directory containing the following:)
-  - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
+- *BSQR-applied.out.bam (BAM file containing the recalibrated read data)
+
+---
+
+<br>
+
+**In steps 9 - 12 chromosomes are split for parallel processing**
 
 ---
 
@@ -375,56 +349,29 @@ STAR --twopassMode Basic \
 ## 9. Call Germline SNPs and Indels via Local Re-assembly of Haplotypes
 
 ```
-STAR --twopassMode Basic \
-  --limitBAMsortRAM 65000000000 \
-  --genomeDir /path/to/STAR/genome/directory \
-  --outSAMunmapped Within \
-  --outFilterType BySJout \
-  --outSAMattributes NH HI AS nM NM MD jM jI MC ch \ #same as All
-  --outSAMattrRGline ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${index} LB:${sample} SM:${sample} , ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${index} LB:${sample} SM:${sample} \
-  --outFilterMultimapNmax 20 \
-  --outFilterMismatchNmax 999 \
-  --outFilterMismatchNoverReadLmax 0.04 \
-  --alignIntronMin 20 \
-  --alignIntronMax 1000000 \
-  --alignMatesGapMax 1000000 \ # for PE only
-  --alignSJoverhangMin 8 \
-  --alignSJDBoverhangMin 1 \
-  --sjdbScore 1 \
-  --readFilesCommand zcat \
-  --runThreadN NumberOfThreads \
-  --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
-  --chimOutJunctionFormat 1 \
-  --chimSegmentMin 20 \
-  --outSAMtype BAM SortedByCoordinate \
-  --quantMode TranscriptomeSAM GeneCounts \
-  --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-  --outFileNamePrefix /path/to/STAR/output/directory/${sample}/${sample}_ \
-  --readFilesIn /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R1.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R1.fq.gz /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R2.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R2.fq.gz
+gatk --java-options "-Xmx100G" HaplotypeCaller -R $genome_ref/*.fa \
+  -I $inter_dir/${sample}/${sample}_BSQR-applied.out.bam \
+  -O $out_dir/${sample}/${chr}/${sample}_${chr}.vcf.gz \
+  -ERC GVCF \
+  --dont-use-soft-clipped-bases \
+  --standard-min-confidence-threshold-for-calling 20 \
+  -G StandardAnnotation \
+  -G AS_StandardAnnotation \
+  --intervals ${chr}
 ```
 
 **Input Data:**
-- STAR genome reference (output from step 4b)
-- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+- *BSQR-applied.out.bam (BAM file containing the recalibrated read data, output from step 8)
+- ${chr} (ensembl chromosome identifer)
+
+For processing human-filtered data
+- Homo_sapiens.GRCh38.dna.primary_assembly.fa (genome sequence)
+
+For processing unfiltered data
+- Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa (genome sequence)
 
 **Output Data:**
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- *Aligned.toTranscriptome.out.bam (sorted mapping to transcriptome)
-- *Chimeric.out.junction (chimerically aligned read data)
-- *Chimeric.out.sam (sam file containing chimeric alignments)
-- *Log.final.out (log file conting alignment info/stats such as reads mapped, etc)
-- *Log.out
-- *Log.progress.out
-- *ReadsPerGene.out.tab (STAR read counts per gene)
-- *SJ.out.tab (high confidence collapsed splice junctions)
-- *_STARgenome (directory containing the following:)
-  - sjdbInfo.txt
-  - sjdbList.out.tab
-- *_STARpass1 (directory containing the following:)
-  - Log.final.out
-  - SJ.out.tab
-- *_STARtmp (directory containing the following:)
-  - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
+- *.vcf.gz (GVCF file containing raw, unfiltered SNP and indel calls)
 
 ---
 
@@ -433,56 +380,22 @@ STAR --twopassMode Basic \
 ## 10. Import VCFs to Genomics Database
 
 ```
-STAR --twopassMode Basic \
-  --limitBAMsortRAM 65000000000 \
-  --genomeDir /path/to/STAR/genome/directory \
-  --outSAMunmapped Within \
-  --outFilterType BySJout \
-  --outSAMattributes NH HI AS nM NM MD jM jI MC ch \ #same as All
-  --outSAMattrRGline ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${index} LB:${sample} SM:${sample} , ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${index} LB:${sample} SM:${sample} \
-  --outFilterMultimapNmax 20 \
-  --outFilterMismatchNmax 999 \
-  --outFilterMismatchNoverReadLmax 0.04 \
-  --alignIntronMin 20 \
-  --alignIntronMax 1000000 \
-  --alignMatesGapMax 1000000 \ # for PE only
-  --alignSJoverhangMin 8 \
-  --alignSJDBoverhangMin 1 \
-  --sjdbScore 1 \
-  --readFilesCommand zcat \
-  --runThreadN NumberOfThreads \
-  --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
-  --chimOutJunctionFormat 1 \
-  --chimSegmentMin 20 \
-  --outSAMtype BAM SortedByCoordinate \
-  --quantMode TranscriptomeSAM GeneCounts \
-  --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-  --outFileNamePrefix /path/to/STAR/output/directory/${sample}/${sample}_ \
-  --readFilesIn /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R1.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R1.fq.gz /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R2.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R2.fq.gz
+gatk --java-options "-Xmx40G" GenomicsDBImport -V $out_dir/sample1/${chr}/sample1_${chr}.vcf.gz \
+  -V $out_dir/sample2/${chr}/sample2_${chr}.vcf.gz \
+  -V $out_dir/sample3/${chr}/sample3_${chr}.vcf.gz \
+  <…> \
+  -V $out_dir/sample731/${chr}/sample731_${chr}.vcf.gz \
+  -V $out_dir/sample732/${chr}/sample732_${chr}.vcf.gz \
+  --genomicsdb-workspace-path $out_dir/GVCF_databases/${chr}_database \
+  --intervals ${chr}
 ```
 
 **Input Data:**
-- STAR genome reference (output from step 4b)
-- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+- *.vcf.gz (GVCF file containing raw, unfiltered SNP and indel calls, output from step 9)
+- ${chr} (ensembl chromosome identifer)
 
 **Output Data:**
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- *Aligned.toTranscriptome.out.bam (sorted mapping to transcriptome)
-- *Chimeric.out.junction (chimerically aligned read data)
-- *Chimeric.out.sam (sam file containing chimeric alignments)
-- *Log.final.out (log file conting alignment info/stats such as reads mapped, etc)
-- *Log.out
-- *Log.progress.out
-- *ReadsPerGene.out.tab (STAR read counts per gene)
-- *SJ.out.tab (high confidence collapsed splice junctions)
-- *_STARgenome (directory containing the following:)
-  - sjdbInfo.txt
-  - sjdbList.out.tab
-- *_STARpass1 (directory containing the following:)
-  - Log.final.out
-  - SJ.out.tab
-- *_STARtmp (directory containing the following:)
-  - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
+- *database (genomics database containing raw, unfiltered SNP and indel calls for all samples that will be joint-genotyped in step 11)
 
 ---
 
@@ -491,56 +404,25 @@ STAR --twopassMode Basic \
 ## 11. Perform Joint Genotyping
 
 ```
-STAR --twopassMode Basic \
-  --limitBAMsortRAM 65000000000 \
-  --genomeDir /path/to/STAR/genome/directory \
-  --outSAMunmapped Within \
-  --outFilterType BySJout \
-  --outSAMattributes NH HI AS nM NM MD jM jI MC ch \ #same as All
-  --outSAMattrRGline ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${index} LB:${sample} SM:${sample} , ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${index} LB:${sample} SM:${sample} \
-  --outFilterMultimapNmax 20 \
-  --outFilterMismatchNmax 999 \
-  --outFilterMismatchNoverReadLmax 0.04 \
-  --alignIntronMin 20 \
-  --alignIntronMax 1000000 \
-  --alignMatesGapMax 1000000 \ # for PE only
-  --alignSJoverhangMin 8 \
-  --alignSJDBoverhangMin 1 \
-  --sjdbScore 1 \
-  --readFilesCommand zcat \
-  --runThreadN NumberOfThreads \
-  --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
-  --chimOutJunctionFormat 1 \
-  --chimSegmentMin 20 \
-  --outSAMtype BAM SortedByCoordinate \
-  --quantMode TranscriptomeSAM GeneCounts \
-  --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-  --outFileNamePrefix /path/to/STAR/output/directory/${sample}/${sample}_ \
-  --readFilesIn /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R1.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R1.fq.gz /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R2.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R2.fq.gz
+gatk --java-options "-Xmx40G" GenotypeGVCFs -R $genome_ref/*.fa \
+  -V gendb://$out_dir/GVCF_databases/${chr}_database \
+  -G StandardAnnotation \
+  -G AS_StandardAnnotation \
+  -O $out_dir/all_samples/${chr}/${chr}_Geno_out.vcf.gz
 ```
 
 **Input Data:**
-- STAR genome reference (output from step 4b)
-- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+- *database (genomics database, output from step 10)
+- ${chr} (ensembl chromosome identifer)
+
+For processing human-filtered data
+- Homo_sapiens.GRCh38.dna.primary_assembly.fa (genome sequence)
+
+For processing unfiltered data
+- Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa (genome sequence)
 
 **Output Data:**
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- *Aligned.toTranscriptome.out.bam (sorted mapping to transcriptome)
-- *Chimeric.out.junction (chimerically aligned read data)
-- *Chimeric.out.sam (sam file containing chimeric alignments)
-- *Log.final.out (log file conting alignment info/stats such as reads mapped, etc)
-- *Log.out
-- *Log.progress.out
-- *ReadsPerGene.out.tab (STAR read counts per gene)
-- *SJ.out.tab (high confidence collapsed splice junctions)
-- *_STARgenome (directory containing the following:)
-  - sjdbInfo.txt
-  - sjdbList.out.tab
-- *_STARpass1 (directory containing the following:)
-  - Log.final.out
-  - SJ.out.tab
-- *_STARtmp (directory containing the following:)
-  - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
+- *Geno_out.vcf.gz (VCF file containing all jointly genotyped samples)
 
 ---
 
@@ -549,111 +431,56 @@ STAR --twopassMode Basic \
 ## 12. Filter Variant Calls Based on Annotations
 
 ```
-STAR --twopassMode Basic \
-  --limitBAMsortRAM 65000000000 \
-  --genomeDir /path/to/STAR/genome/directory \
-  --outSAMunmapped Within \
-  --outFilterType BySJout \
-  --outSAMattributes NH HI AS nM NM MD jM jI MC ch \ #same as All
-  --outSAMattrRGline ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${index} LB:${sample} SM:${sample} , ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${index} LB:${sample} SM:${sample} \
-  --outFilterMultimapNmax 20 \
-  --outFilterMismatchNmax 999 \
-  --outFilterMismatchNoverReadLmax 0.04 \
-  --alignIntronMin 20 \
-  --alignIntronMax 1000000 \
-  --alignMatesGapMax 1000000 \ # for PE only
-  --alignSJoverhangMin 8 \
-  --alignSJDBoverhangMin 1 \
-  --sjdbScore 1 \
-  --readFilesCommand zcat \
-  --runThreadN NumberOfThreads \
-  --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
-  --chimOutJunctionFormat 1 \
-  --chimSegmentMin 20 \
-  --outSAMtype BAM SortedByCoordinate \
-  --quantMode TranscriptomeSAM GeneCounts \
-  --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-  --outFileNamePrefix /path/to/STAR/output/directory/${sample}/${sample}_ \
-  --readFilesIn /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R1.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R1.fq.gz /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R2.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R2.fq.gz
+gatk VariantFiltration -R $genome_ref/*.fa \
+  -V $out_dir/all_samples/${chr}/${chr}_Geno_out.vcf.gz \
+  -O $out_dir/all_samples/${chr}/${chr}_VarFilt_output.vcf.gz \
+  --window 35 \
+  --cluster 3 \
+  --filter-name "FS" \
+  --filter "FS > 30.0" \
+  --filter-name "QD" \
+  --filter "QD < 2.0"
 ```
 
 **Input Data:**
-- STAR genome reference (output from step 4b)
-- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+- *Geno_out.vcf.gz (VCF file containing all jointly genotyped samples, output from step 11)
+- ${chr} (ensembl chromosome identifer)
+
+For processing human-filtered data
+- Homo_sapiens.GRCh38.dna.primary_assembly.fa (genome sequence)
+
+For processing unfiltered data
+- Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa (genome sequence)
 
 **Output Data:**
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- *Aligned.toTranscriptome.out.bam (sorted mapping to transcriptome)
-- *Chimeric.out.junction (chimerically aligned read data)
-- *Chimeric.out.sam (sam file containing chimeric alignments)
-- *Log.final.out (log file conting alignment info/stats such as reads mapped, etc)
-- *Log.out
-- *Log.progress.out
-- *ReadsPerGene.out.tab (STAR read counts per gene)
-- *SJ.out.tab (high confidence collapsed splice junctions)
-- *_STARgenome (directory containing the following:)
-  - sjdbInfo.txt
-  - sjdbList.out.tab
-- *_STARpass1 (directory containing the following:)
-  - Log.final.out
-  - SJ.out.tab
-- *_STARtmp (directory containing the following:)
-  - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
+- *VarFilt_output.vcf.gz (filtered VCF file containing variants annotated as having passed or failed the indicated `filters`)
 
 ---
 
 <br>
 
-## 13. Combine Variant Files
+## 13. Combine Variant Files From Each Chromosome
 
 ```
-STAR --twopassMode Basic \
-  --limitBAMsortRAM 65000000000 \
-  --genomeDir /path/to/STAR/genome/directory \
-  --outSAMunmapped Within \
-  --outFilterType BySJout \
-  --outSAMattributes NH HI AS nM NM MD jM jI MC ch \ #same as All
-  --outSAMattrRGline ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${index} LB:${sample} SM:${sample} , ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${index} LB:${sample} SM:${sample} \
-  --outFilterMultimapNmax 20 \
-  --outFilterMismatchNmax 999 \
-  --outFilterMismatchNoverReadLmax 0.04 \
-  --alignIntronMin 20 \
-  --alignIntronMax 1000000 \
-  --alignMatesGapMax 1000000 \ # for PE only
-  --alignSJoverhangMin 8 \
-  --alignSJDBoverhangMin 1 \
-  --sjdbScore 1 \
-  --readFilesCommand zcat \
-  --runThreadN NumberOfThreads \
-  --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
-  --chimOutJunctionFormat 1 \
-  --chimSegmentMin 20 \
-  --outSAMtype BAM SortedByCoordinate \
-  --quantMode TranscriptomeSAM GeneCounts \
-  --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-  --outFileNamePrefix /path/to/STAR/output/directory/${sample}/${sample}_ \
-  --readFilesIn /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R1.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R1.fq.gz /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R2.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R2.fq.gz
+gatk MergeVcfs --INPUT $out_dir/all_samples/chr1/chr1_VarFilt_output.vcf.gz \
+  --INPUT $out_dir/all_samples/chr2/chr2_VarFilt_output.vcf.gz \
+  --INPUT $out_dir/all_samples/chr3/chr3_VarFilt_output.vcf.gz \
+  <…> \
+  --INPUT $out_dir/all_samples/chrX/chrX_VarFilt_output.vcf.gz \
+  --INPUT $out_dir/all_samples/chrY/chrY_VarFilt_output.vcf.gz \
+  --INPUT $out_dir/all_samples/chrMT/chrMT_VarFilt_output.vcf.gz \
+  --OUTPUT $out_dir/all_samples/merged_chr.vcf.gz \
+  --SEQUENCE_DICTIONARY $genome_ref/*.dict
 ```
 
 **Input Data:**
-- STAR genome reference (output from step 4b)
-- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+- *VarFilt_output.vcf.gz (filtered VCF file, output from step 12)
+
+For processing human-filtered data
+- Homo_sapiens.GRCh38.dna.primary_assembly.dict (genome dictionary, output from step 1c)
+
+For processing unfiltered data
+- Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.dict (genome dictionary, output from step 1c)
 
 **Output Data:**
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
-- *Aligned.toTranscriptome.out.bam (sorted mapping to transcriptome)
-- *Chimeric.out.junction (chimerically aligned read data)
-- *Chimeric.out.sam (sam file containing chimeric alignments)
-- *Log.final.out (log file conting alignment info/stats such as reads mapped, etc)
-- *Log.out
-- *Log.progress.out
-- *ReadsPerGene.out.tab (STAR read counts per gene)
-- *SJ.out.tab (high confidence collapsed splice junctions)
-- *_STARgenome (directory containing the following:)
-  - sjdbInfo.txt
-  - sjdbList.out.tab
-- *_STARpass1 (directory containing the following:)
-  - Log.final.out
-  - SJ.out.tab
-- *_STARtmp (directory containing the following:)
-  - BAMsort (directory containing subdirectories that are empty – this was the location for temp files that were automatically removed after successful completion)
+- *merged_chr.vcf.gz (filtered VCF file containing all chromosomes for all samples sorted according to the `SEQUENCE_DICTIONARY` and by coordinate)
