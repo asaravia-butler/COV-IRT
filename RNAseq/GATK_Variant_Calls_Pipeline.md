@@ -1,6 +1,6 @@
 # GATK Variant Calls Processing Pipeline
 
-> **This page holds an overview and instructions for how COV-IRT generates variant call data from raw Illumina RNA-sequencing data of COVID-19 samples. This pipeline uses the indexed \*Aligned.sortedByCoord_sorted.out.bam files generated from [step 6 of the 'Raw to Aligned Data Pipeline'](Raw_to_Aligned_Data_Pipeline.md#6-sort-and-index-genome-aligned-data). Exact processing commands used for specific cohorts of samples are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory.**  
+> **This page holds an overview and instructions for how COV-IRT generates variant call data from raw Illumina RNA-sequencing data of COVID-19 samples. This pipeline uses the indexed \*Aligned.sortedByCoord_sorted.out.bam files generated from [step 6 of the 'Raw to Aligned Data Pipeline'](Raw_to_Aligned_Data_Pipeline.md#6-sort-and-index-genome-aligned-data) and the samples.txt file generated from [step 0 of the 'Raw to Aligned Data Pipeline'](Raw_to_Aligned_Data_Pipeline.md#0-create-sample-list). Exact processing commands used for specific cohorts of samples are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory.**  
 
 ---
 
