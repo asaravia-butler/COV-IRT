@@ -8,6 +8,7 @@
 
 - [**Software used**](#software-used)
 - [**General processing overview with example commands**](#general-processing-overview-with-example-commands)
+  - [**0. Create Sample List**](#0-create-sample-list)
   - [**1. Raw Data QC**](#1-raw-data-qc)
     - [**1a. Raw Data QC**](#1a-raw-data-qc)
     - [**1b. Compile Raw Data QC**](#1b-compile-raw-data-qc)
@@ -52,6 +53,24 @@
 > Exact processing commands used for specific cohorts are provided in the [Exact_scripts_used](Exact_scripts_used) sub-directory.  
 
 ---
+
+## 0. Create Sample List
+
+Create a single column list of all the samples to process. Each line in the list is a sample name that will be added to all processed data for that sample using the variable ${sample} in each processing command.
+
+```
+ls -1 *R1.fastq.gz | sed "s/.R1.fastq.gz//" > samples.txt
+```
+
+**Input Data:**
+- Single column list of the forward reads (*R1.fastq.gz) of each sample to be processed
+
+**Output Data:**
+- samples.txt (text file containg a list of all sample names)
+
+---
+
+<br>
 
 ## 1. Raw Data QC
 
