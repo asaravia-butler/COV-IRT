@@ -1,1 +1,4 @@
 samples.txt
+raw_fastqc
+raw_multiqc
+trimmomatic
