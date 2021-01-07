@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-// TOOD: Understand data storage on NASA cluster
+// TODO: Understand data storage on NASA cluster
 
 params.raw_reads_dir = "/Users/raymondleclair/Projects/IQT/COV-IRT/RNAseq/Fastq_Input_Files_for_Testing"
 
@@ -63,8 +63,9 @@ process compileRawDataQC {
 
 raw_reads_file_pairs_ch = Channel.fromFilePairs(params.raw_reads_dir + "/*.R{1,2}.fastq.gz")
 
+// TODO: Understand setting to use system maximum threads
 params.numberOfThreads = 2
-params.trimmed_reads_dir = params.raw_reads_dir + "/trimmomatic"
+params.trimmed_reads_dir = params.raw_reads_dir + "/trimmed_reads"
 
 process trimRawData {
 
@@ -76,7 +77,7 @@ process trimRawData {
     set sample, file(raw_reads_file_pair) from raw_reads_file_pairs_ch
 
   output:
-    file "*" into trimmomatic_ch
+    file "*_P_trimmed.fq.gz" into trimmed_reads_files_ch
 
   """
   trimmomatic PE \
@@ -97,8 +98,6 @@ process trimRawData {
   """
 }
 
-trimmed_reads_files_ch = Channel.fromPath(params.trimmed_reads_dir + "/*.fq.gz")
-
 params.trimmed_fastqc_dir = params.trimmed_reads_dir + "/trimmed_fastqc"
 
 process createTrimmedDataQC {
@@ -115,5 +114,24 @@ process createTrimmedDataQC {
 
   """
   fastqc ${trimmed_reads_file}
+  """
+}
+
+params.trimmed_multiqc_dir = params.trimmed_reads_dir + "/trimmed_multiqc"
+
+process compileTrimmedDataQC {
+
+  label "align"
+
+  publishDir params.trimmed_multiqc_dir
+
+  input:
+    file "*" from trimmed_fastqc_ch.collect()
+
+  output:
+    file "*" into trimmed_multiqc_ch
+
+  """
+  multiqc -n trimmed_multiqc -f ${params.trimmed_fastqc_dir}
   """
 }
