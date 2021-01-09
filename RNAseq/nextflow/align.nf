@@ -78,6 +78,8 @@ process trimRawReads {
 
   output:
     file "*_P_trimmed.fq.gz" into trimmed_reads_files_ch
+    file "*_R1_P_trimmed.fq.gz" into trimmed_reads_one_files_ch
+    file "*_R2_P_trimmed.fq.gz" into trimmed_reads_two_files_ch
 
   """
   trimmomatic PE \
@@ -133,5 +135,19 @@ process compileTrimmedReadsQC {
 
   """
   multiqc -n trimmed_multiqc -f ${params.trimmed_fastqc_dir}
+  """
+}
+
+process splitTrimmedReads {
+
+  input:
+    file trimmed_reads_one_file from trimmed_reads_one_files_ch
+    file trimmed_reads_two_file from trimmed_reads_two_files_ch
+
+  """
+  sample=`echo ${trimmed_reads_one_file} | sed s/_R1_P_trimmed.fq.gz//`
+  docker run -v ${params.trimmed_reads_dir}:/opt --rm \
+    quay.io/kmhernan/gdc-fastq-splitter -o split_\${sample}_ \
+    ${trimmed_reads_one_file} ${trimmed_reads_two_file}
   """
 }
