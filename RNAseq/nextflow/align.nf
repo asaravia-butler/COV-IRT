@@ -145,9 +145,15 @@ process splitTrimmedReads {
     file trimmed_reads_two_file from trimmed_reads_two_files_ch
 
   """
-  sample=`echo ${trimmed_reads_one_file} | sed s/_R1_P_trimmed.fq.gz//`
+  sample_one=`echo ${trimmed_reads_one_file} | sed s/_R1_P_trimmed.fq.gz//`
+  sample_two=`echo ${trimmed_reads_two_file} | sed s/_R2_P_trimmed.fq.gz//`
+  # TODO: Decide if this test is required
+  # Ensure sample reads file pairs are not interleaved
+  if [ \${sample_one} != \${sample_two} ]; then
+    exit 1
+  fi
   docker run -v ${params.trimmed_reads_dir}:/opt --rm \
-    quay.io/kmhernan/gdc-fastq-splitter -o split_\${sample}_ \
+    quay.io/kmhernan/gdc-fastq-splitter -o split_\${sample_one}_ \
     ${trimmed_reads_one_file} ${trimmed_reads_two_file}
   """
 }
