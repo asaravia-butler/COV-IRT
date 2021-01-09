@@ -6,7 +6,7 @@ params.raw_reads_dir = "/Users/raymondleclair/Projects/IQT/COV-IRT/RNAseq/Fastq_
 
 process createSampleList {
 
-  publishDir params.raw_reads_dir
+  publishDir params.raw_reads_dir, mode: "copy"
 
   output:
     file "samples.txt" into samples_file_ch
@@ -23,11 +23,11 @@ raw_reads_files_ch = Channel.fromPath(params.raw_reads_dir + "/*.fastq.gz")
 
 params.raw_fastqc_dir = params.raw_reads_dir + "/raw_fastqc"
 
-process createRawDataQC {
+process createRawReadsQC {
 
   label "align"
 
-  publishDir params.raw_fastqc_dir
+  publishDir params.raw_fastqc_dir, mode: "copy"
 
   input:
     // TODO: Use where needed
@@ -44,11 +44,11 @@ process createRawDataQC {
 
 params.raw_multiqc_dir = params.raw_reads_dir + "/raw_multiqc"
 
-process compileRawDataQC {
+process compileRawReadsQC {
 
   label "align"
 
-  publishDir params.raw_multiqc_dir
+  publishDir params.raw_multiqc_dir, mode: "copy"
 
   input:
     file "*" from raw_fastqc_ch.collect()
@@ -71,7 +71,7 @@ process trimRawData {
 
   label "align"
   
-  publishDir params.trimmed_reads_dir
+  publishDir params.trimmed_reads_dir, mode: "copy"
 
   input:
     set sample, file(raw_reads_file_pair) from raw_reads_file_pairs_ch
@@ -104,7 +104,7 @@ process createTrimmedDataQC {
 
   label "align"
 
-  publishDir params.trimmed_fastqc_dir
+  publishDir params.trimmed_fastqc_dir, mode: "copy"
 
   input:
     file trimmed_reads_file from trimmed_reads_files_ch
@@ -123,7 +123,7 @@ process compileTrimmedDataQC {
 
   label "align"
 
-  publishDir params.trimmed_multiqc_dir
+  publishDir params.trimmed_multiqc_dir, mode: "copy"
 
   input:
     file "*" from trimmed_fastqc_ch.collect()
