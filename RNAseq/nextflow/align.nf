@@ -67,7 +67,7 @@ raw_reads_file_pairs_ch = Channel.fromFilePairs(params.raw_reads_dir + "/*.R{1,2
 params.numberOfThreads = 2
 params.trimmed_reads_dir = params.raw_reads_dir + "/trimmed_reads"
 
-process trimRawData {
+process trimRawReads {
 
   label "align"
   
@@ -100,7 +100,7 @@ process trimRawData {
 
 params.trimmed_fastqc_dir = params.trimmed_reads_dir + "/trimmed_fastqc"
 
-process createTrimmedDataQC {
+process createTrimmedReadsQC {
 
   label "align"
 
@@ -119,7 +119,7 @@ process createTrimmedDataQC {
 
 params.trimmed_multiqc_dir = params.trimmed_reads_dir + "/trimmed_multiqc"
 
-process compileTrimmedDataQC {
+process compileTrimmedReadsQC {
 
   label "align"
 
