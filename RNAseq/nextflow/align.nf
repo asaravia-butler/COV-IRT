@@ -2,7 +2,8 @@
 
 // TODO: Understand data storage on NASA cluster
 
-params.raw_reads_dir = "/Users/raymondleclair/Projects/IQT/COV-IRT/RNAseq/Fastq_Input_Files_for_Testing"
+params.raw_reads_dir = "/home/ubuntu/COV-IRT/RNAseq/Fastq_Input_Files_for_Testing"
+params.ensembl_data_dir = "/home/ubuntu/COV-IRT-Data"
 
 process createSampleList {
 
