@@ -65,7 +65,7 @@ process compileRawReadsQC {
 raw_reads_file_pairs_ch = Channel.fromFilePairs(params.raw_reads_dir + "/*.R{1,2}.fastq.gz")
 
 // TODO: Understand setting to use system maximum threads
-params.numberOfThreads = 2
+params.numberOfThreads = 16
 params.trimmed_reads_dir = params.raw_reads_dir + "/trimmed_reads"
 
 process trimRawReads {
@@ -139,6 +139,8 @@ process compileTrimmedReadsQC {
   """
 }
 
+params.split_reads_dir = params.raw_reads_dir + "/split_reads"
+
 process splitTrimmedReads {
 
   input:
@@ -153,8 +155,65 @@ process splitTrimmedReads {
   if [ \${sample_one} != \${sample_two} ]; then
     exit 1
   fi
-  docker run -v ${params.trimmed_reads_dir}:/opt --rm \
+  mkdir -p ${params.split_reads_dir}
+  cp ${params.trimmed_reads_dir}/${trimmed_reads_one_file} ${params.split_reads_dir}
+  cp ${params.trimmed_reads_dir}/${trimmed_reads_two_file} ${params.split_reads_dir}
+  docker run -v ${params.split_reads_dir}:/opt --rm \
     quay.io/kmhernan/gdc-fastq-splitter -o split_\${sample_one}_ \
     ${trimmed_reads_one_file} ${trimmed_reads_two_file}
+  rm ${params.split_reads_dir}/${trimmed_reads_one_file}
+  rm ${params.split_reads_dir}/${trimmed_reads_two_file}
+  """
+}
+
+split_reads_file_pairs_ch = Channel.fromFilePairs(params.split_reads_dir + "/*_R{1,2}.fq.gz")
+
+params.genome_dir = params.ensembl_data_dir + "/filtered"
+params.aligned_reads_dir = params.raw_reads_dir + "/aligned_reads"
+
+// TODO: What value should this be?
+params.index = 3
+
+process alignReadsToReferenceGenome {
+
+  label "align"
+
+  publishDir params.aligned_reads_dir, mode: "copy"
+
+  input:
+    set sample, file(split_reads_file_pair) from split_reads_file_pairs_ch
+
+  """
+  rm ${split_reads_file_pair[0]}
+  rm ${split_reads_file_pair[1]}
+  cp ${params.split_reads_dir}/${split_reads_file_pair[0]} .
+  cp ${params.split_reads_dir}/${split_reads_file_pair[1]} .
+  STAR --twopassMode Basic \
+       --limitBAMsortRAM 65000000000 \
+       --genomeDir ${params.genome_dir} \
+       --outSAMunmapped Within \
+       --outFilterType BySJout \
+       --outSAMattributes NH HI AS nM NM MD jM jI MC ch \
+       --outSAMattrRGline ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${params.index} LB:${sample} SM:${sample}, \
+                          ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${params.index} LB:${sample} SM:${sample} \
+       --outFilterMultimapNmax 20 \
+       --outFilterMismatchNmax 999 \
+       --outFilterMismatchNoverReadLmax 0.04 \
+       --alignIntronMin 20 \
+       --alignIntronMax 1000000 \
+       --alignMatesGapMax 1000000 \
+       --alignSJoverhangMin 8 \
+       --alignSJDBoverhangMin 1 \
+       --sjdbScore 1 \
+       --readFilesCommand zcat \
+       --runThreadN ${params.numberOfThreads} \
+       --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
+       --chimOutJunctionFormat 1 \
+       --chimSegmentMin 20 \
+       --outSAMtype BAM SortedByCoordinate \
+       --quantMode TranscriptomeSAM GeneCounts \
+       --outSAMheaderHD @HD VN:1.4 SO:coordinate \
+       --outFileNamePrefix ${sample}_ \
+       --readFilesIn ${split_reads_file_pair}
   """
 }
