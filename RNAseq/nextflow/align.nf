@@ -46,8 +46,9 @@ process compileRawReadsQC {
 
 raw_reads_file_pairs_ch = Channel.fromFilePairs(params.raw_reads_dir + "/*.R{1,2}.fastq.gz")
 
-// TODO: Understand setting to use system maximum threads
+// TODO: Automate setting of this value
 params.numberOfThreads = 16
+
 params.trimmed_reads_dir = params.raw_reads_dir + "/trimmed_reads"
 
 process trimRawReads {
@@ -125,29 +126,26 @@ params.split_reads_dir = params.raw_reads_dir + "/split_reads"
 
 process splitTrimmedReads {
 
+  publishDir params.split_reads_dir, mode: "copy"
+
   input:
     file trimmed_reads_one_file from trimmed_reads_one_files_ch
     file trimmed_reads_two_file from trimmed_reads_two_files_ch
 
-  // TODO: Need and output block
-  
+  output:
+    file "split_*_R1.fq.gz" into split_reads_one_files_ch
+    file "split_*_R2.fq.gz" into split_reads_two_files_ch
+
   """
-  sample_one=`echo ${trimmed_reads_one_file} | sed s/_R1_P_trimmed.fq.gz//`
-  sample_two=`echo ${trimmed_reads_two_file} | sed s/_R2_P_trimmed.fq.gz//`
-  # TODO: Decide if this test is required
-  # Ensure sample reads file pairs are not interleaved
-  if [ \${sample_one} != \${sample_two} ]; then
-    exit 1
-  fi
-  mkdir -p ${params.split_reads_dir}
-  # Docker doesn't like symbolic links
-  cp ${params.trimmed_reads_dir}/${trimmed_reads_one_file} ${params.split_reads_dir}
-  cp ${params.trimmed_reads_dir}/${trimmed_reads_two_file} ${params.split_reads_dir}
-  docker run -v ${params.split_reads_dir}:/opt --rm \
-    quay.io/kmhernan/gdc-fastq-splitter -o split_\${sample_one}_ \
+  sample=`echo ${trimmed_reads_one_file} | sed s/_R1_P_trimmed.fq.gz//`
+  # Remove links and copy in reads files
+  rm ${trimmed_reads_one_file}
+  rm ${trimmed_reads_two_file}
+  cp ${params.trimmed_reads_dir}/${trimmed_reads_one_file} .
+  cp ${params.trimmed_reads_dir}/${trimmed_reads_two_file} .
+  docker run -v \${PWD}:/opt --rm \
+    quay.io/kmhernan/gdc-fastq-splitter -o split_\${sample}_ \
     ${trimmed_reads_one_file} ${trimmed_reads_two_file}
-  rm ${params.split_reads_dir}/${trimmed_reads_one_file}
-  rm ${params.split_reads_dir}/${trimmed_reads_two_file}
   """
 }
 
