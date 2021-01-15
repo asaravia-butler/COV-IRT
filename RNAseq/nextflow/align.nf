@@ -3,22 +3,6 @@
 // TODO: Understand data storage on NASA cluster
 
 params.raw_reads_dir = "/home/ubuntu/COV-IRT/RNAseq/Fastq_Input_Files_for_Testing"
-params.ensembl_data_dir = "/home/ubuntu/COV-IRT-Data"
-
-process createSampleList {
-
-  publishDir params.raw_reads_dir, mode: "copy"
-
-  output:
-    file "samples.txt" into samples_file_ch
-
-  """
-  ls ${params.raw_reads_dir}/*.R1.fastq.gz \
-    | xargs basename -a \
-    | sed s/.R1.fastq.gz// \
-    > samples.txt
-  """
-}
 
 raw_reads_files_ch = Channel.fromPath(params.raw_reads_dir + "/*.fastq.gz")
 
@@ -167,8 +151,7 @@ process splitTrimmedReads {
   """
 }
 
-split_reads_file_pairs_ch = Channel.fromFilePairs(params.split_reads_dir + "/*_R{1,2}.fq.gz")
-
+params.ensembl_data_dir = "/home/ubuntu/COV-IRT-Data"
 params.genome_dir = params.ensembl_data_dir + "/filtered"
 params.aligned_reads_dir = params.raw_reads_dir + "/aligned_reads"
 // TODO: What value should this be?
