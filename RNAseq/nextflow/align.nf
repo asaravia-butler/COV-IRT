@@ -151,9 +151,10 @@ process splitTrimmedReads {
 
 params.ensembl_data_dir = "/home/ubuntu/COV-IRT-Data"
 params.genome_dir = params.ensembl_data_dir + "/filtered"
-params.aligned_reads_dir = params.raw_reads_dir + "/aligned_reads"
-// TODO: What value should this be?
+// TODO: Automate setting of this value
 params.index = 3
+
+params.aligned_reads_dir = params.raw_reads_dir + "/aligned_reads"
 
 process alignReadsToReferenceGenome {
 
@@ -162,17 +163,20 @@ process alignReadsToReferenceGenome {
   publishDir params.aligned_reads_dir, mode: "copy"
 
   input:
-    set sample, file(split_reads_file_pair) from split_reads_file_pairs_ch
+    file split_reads_one_file from split_reads_one_files_ch
+    file split_reads_two_file from split_reads_two_files_ch
 
   output:
-    file "*" into aligned_reads_ch
+    file "*ReadsPerGene.out.tab" into reads_counts_files_ch
+    file "*_Aligned.sortedByCoord.out.bam" into aligned_reads_files_ch
 
   """
-  rm ${split_reads_file_pair[0]}
-  rm ${split_reads_file_pair[1]}
-  # TODO: Why is this needed?
-  cp ${params.split_reads_dir}/${split_reads_file_pair[0]} .
-  cp ${params.split_reads_dir}/${split_reads_file_pair[1]} .
+  sample=`echo ${split_reads_one_file} | sed s/split_// | sed s/_[a-zA-Z0-9]*_[0-9]*_R1.fq.gz//`
+  # Remove links and copy in reads files
+  rm ${split_reads_one_file}
+  rm ${split_reads_two_file}
+  cp ${params.split_reads_dir}/${split_reads_one_file} .
+  cp ${params.split_reads_dir}/${split_reads_two_file} .
   STAR \
     --twopassMode Basic \
     --limitBAMsortRAM 65000000000 \
@@ -181,8 +185,8 @@ process alignReadsToReferenceGenome {
     --outFilterType BySJout \
     --outSAMattributes NH HI AS nM NM MD jM jI MC ch \
     --outSAMattrRGline \
-        ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${params.index} LB:${sample} SM:${sample}, \
-        ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${params.index} LB:${sample} SM:${sample} \
+        ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${params.index} LB:\${sample} SM:\${sample}, \
+        ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${params.index} LB:\${sample} SM:\${sample} \
     --outFilterMultimapNmax 20 \
     --outFilterMismatchNmax 999 \
     --outFilterMismatchNoverReadLmax 0.04 \
@@ -200,8 +204,8 @@ process alignReadsToReferenceGenome {
     --outSAMtype BAM SortedByCoordinate \
     --quantMode TranscriptomeSAM GeneCounts \
     --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-    --outFileNamePrefix ${sample}_ \
-    --readFilesIn ${split_reads_file_pair}
+    --outFileNamePrefix \${sample}_ \
+    --readFilesIn ${split_reads_one_file} ${split_reads_two_file}
   """
 }
 
