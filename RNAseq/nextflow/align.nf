@@ -256,8 +256,7 @@ process generateStarCountsTable {
   """
 }
 
-aligned_reads_files_ch = Channel.fromPath(params.aligned_reads_dir + "/*_Aligned.sortedByCoord.out.bam")
-
+// TODO: Automate setting of these values
 params.AvailableMemoryPerThread = "1G"
 params.NumberOfThreads = 16
 
