@@ -14,7 +14,7 @@ process createSampleList {
 
   """
   ls ${params.raw_reads_dir}/*.R1.fastq.gz \
-    | xargs basename \
+    | xargs basename -a \
     | sed s/.R1.fastq.gz// \
     > samples.txt
   """
@@ -170,7 +170,6 @@ split_reads_file_pairs_ch = Channel.fromFilePairs(params.split_reads_dir + "/*_R
 
 params.genome_dir = params.ensembl_data_dir + "/filtered"
 params.aligned_reads_dir = params.raw_reads_dir + "/aligned_reads"
-
 // TODO: What value should this be?
 params.index = 3
 
@@ -183,37 +182,109 @@ process alignReadsToReferenceGenome {
   input:
     set sample, file(split_reads_file_pair) from split_reads_file_pairs_ch
 
+  output:
+    file "*" into aligned_reads_ch
+
   """
   rm ${split_reads_file_pair[0]}
   rm ${split_reads_file_pair[1]}
   cp ${params.split_reads_dir}/${split_reads_file_pair[0]} .
   cp ${params.split_reads_dir}/${split_reads_file_pair[1]} .
-  STAR --twopassMode Basic \
-       --limitBAMsortRAM 65000000000 \
-       --genomeDir ${params.genome_dir} \
-       --outSAMunmapped Within \
-       --outFilterType BySJout \
-       --outSAMattributes NH HI AS nM NM MD jM jI MC ch \
-       --outSAMattrRGline ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${params.index} LB:${sample} SM:${sample}, \
-                          ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${params.index} LB:${sample} SM:${sample} \
-       --outFilterMultimapNmax 20 \
-       --outFilterMismatchNmax 999 \
-       --outFilterMismatchNoverReadLmax 0.04 \
-       --alignIntronMin 20 \
-       --alignIntronMax 1000000 \
-       --alignMatesGapMax 1000000 \
-       --alignSJoverhangMin 8 \
-       --alignSJDBoverhangMin 1 \
-       --sjdbScore 1 \
-       --readFilesCommand zcat \
-       --runThreadN ${params.numberOfThreads} \
-       --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
-       --chimOutJunctionFormat 1 \
-       --chimSegmentMin 20 \
-       --outSAMtype BAM SortedByCoordinate \
-       --quantMode TranscriptomeSAM GeneCounts \
-       --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-       --outFileNamePrefix ${sample}_ \
-       --readFilesIn ${split_reads_file_pair}
+  STAR \
+    --twopassMode Basic \
+    --limitBAMsortRAM 65000000000 \
+    --genomeDir ${params.genome_dir} \
+    --outSAMunmapped Within \
+    --outFilterType BySJout \
+    --outSAMattributes NH HI AS nM NM MD jM jI MC ch \
+    --outSAMattrRGline \
+        ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${params.index} LB:${sample} SM:${sample}, \
+        ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${params.index} LB:${sample} SM:${sample} \
+    --outFilterMultimapNmax 20 \
+    --outFilterMismatchNmax 999 \
+    --outFilterMismatchNoverReadLmax 0.04 \
+    --alignIntronMin 20 \
+    --alignIntronMax 1000000 \
+    --alignMatesGapMax 1000000 \
+    --alignSJoverhangMin 8 \
+    --alignSJDBoverhangMin 1 \
+    --sjdbScore 1 \
+    --readFilesCommand zcat \
+    --runThreadN ${params.numberOfThreads} \
+    --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
+    --chimOutJunctionFormat 1 \
+    --chimSegmentMin 20 \
+    --outSAMtype BAM SortedByCoordinate \
+    --quantMode TranscriptomeSAM GeneCounts \
+    --outSAMheaderHD @HD VN:1.4 SO:coordinate \
+    --outFileNamePrefix ${sample}_ \
+    --readFilesIn ${split_reads_file_pair}
   """
 }
+
+process generateStarCountsTable {
+
+  publishDir params.aligned_reads_dir, mode: "copy"
+
+  input:
+    file "*" from aligned_reads_ch.collect()
+
+  output:
+    file "*" into counts_table_ch
+
+  """
+  #!/usr/bin/env r
+
+  print("Make STAR counts table")
+  print("")
+
+  ### Pull in sample names
+  study <- read.csv(Sys.glob(file.path("${params.raw_reads_dir}", "samples.txt")),
+    header=FALSE, row.names=1, stringsAsFactors=TRUE)
+
+  ### Import data
+  ff <- list.files(file.path("${params.aligned_reads_dir}"),
+    pattern="ReadsPerGene.out.tab", full.names=TRUE)
+
+  ## Remove the first 4 lines
+  counts.files <- lapply(ff, read.table, skip = 4)
+
+  ## Get counts aligned to the second, reverse, strand
+  counts <- as.data.frame(sapply(counts.files, function(x) x[ , 4 ]))
+
+  ## Add column and row names
+  colnames(counts) <- rownames(study)
+  row.names(counts) <- counts.files[[1]]\$V1
+
+  ### Export unnormalized counts table
+  write.csv(counts, file='STAR_Unnormalized_Counts.csv')
+
+  ### print session info
+  print("Session Info below: ")
+  print("")
+  sessionInfo()
+  """
+}
+
+/*
+process sortAndIndexAlignedReads {
+
+  label "align"
+
+  publishDir params.aligned_reads_dir, mode: "copy"
+
+  """
+
+  samtools sort \
+    -m AvailableMemoryPerThread \
+    --threads NumberOfThreads \
+    -o /path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord_sorted.out.bam \
+    /path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord.out.bam
+
+  samtools index \
+    -@ NumberOfThreads \
+    /path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord_sorted.out.bam 
+
+  """
+}
+*/
