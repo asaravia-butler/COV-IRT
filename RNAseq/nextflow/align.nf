@@ -31,8 +31,6 @@ process createRawReadsQC {
   publishDir params.raw_fastqc_dir, mode: "copy"
 
   input:
-    // TODO: Use where needed
-    // file 'samples.txt' from samples_file_ch
     file raw_reads_file from raw_reads_files_ch
 
   output:
@@ -147,6 +145,8 @@ process splitTrimmedReads {
     file trimmed_reads_one_file from trimmed_reads_one_files_ch
     file trimmed_reads_two_file from trimmed_reads_two_files_ch
 
+  // TODO: Need and output block
+  
   """
   sample_one=`echo ${trimmed_reads_one_file} | sed s/_R1_P_trimmed.fq.gz//`
   sample_two=`echo ${trimmed_reads_two_file} | sed s/_R2_P_trimmed.fq.gz//`
@@ -156,6 +156,7 @@ process splitTrimmedReads {
     exit 1
   fi
   mkdir -p ${params.split_reads_dir}
+  # Docker doesn't like symbolic links
   cp ${params.trimmed_reads_dir}/${trimmed_reads_one_file} ${params.split_reads_dir}
   cp ${params.trimmed_reads_dir}/${trimmed_reads_two_file} ${params.split_reads_dir}
   docker run -v ${params.split_reads_dir}:/opt --rm \
@@ -188,6 +189,7 @@ process alignReadsToReferenceGenome {
   """
   rm ${split_reads_file_pair[0]}
   rm ${split_reads_file_pair[1]}
+  # TODO: Why is this needed?
   cp ${params.split_reads_dir}/${split_reads_file_pair[0]} .
   cp ${params.split_reads_dir}/${split_reads_file_pair[1]} .
   STAR \
@@ -227,6 +229,7 @@ process generateStarCountsTable {
   publishDir params.aligned_reads_dir, mode: "copy"
 
   input:
+    file 'samples.txt' from samples_file_ch
     file "*" from aligned_reads_ch.collect()
 
   output:
@@ -238,6 +241,7 @@ process generateStarCountsTable {
   print("Make STAR counts table")
   print("")
 
+  # TODO: Get sample names from ff
   ### Pull in sample names
   study <- read.csv(Sys.glob(file.path("${params.raw_reads_dir}", "samples.txt")),
     header=FALSE, row.names=1, stringsAsFactors=TRUE)
@@ -266,25 +270,29 @@ process generateStarCountsTable {
   """
 }
 
-/*
+aligned_reads_files_ch = Channel.fromPath(params.aligned_reads_dir + "/*_Aligned.sortedByCoord.out.bam")
+
+params.AvailableMemoryPerThread = "1G"
+params.NumberOfThreads = 16
+
 process sortAndIndexAlignedReads {
 
   label "align"
 
   publishDir params.aligned_reads_dir, mode: "copy"
 
+  input:
+    file aligned_reads_file from aligned_reads_files_ch
+
+  output:
+    file "*" into sorted_reads_files_ch
+
   """
-
+  sorted_reads_file=`echo ${aligned_reads_file} | sed s/.out.bam/_sorted.out.bam/`
   samtools sort \
-    -m AvailableMemoryPerThread \
-    --threads NumberOfThreads \
-    -o /path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord_sorted.out.bam \
-    /path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord.out.bam
-
+    -m ${params.AvailableMemoryPerThread} --threads ${params.NumberOfThreads} \
+    -o \${sorted_reads_file} ${aligned_reads_file}
   samtools index \
-    -@ NumberOfThreads \
-    /path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord_sorted.out.bam 
-
+    -@ ${params.NumberOfThreads} \${sorted_reads_file}
   """
 }
-*/
