@@ -214,11 +214,10 @@ process generateStarCountsTable {
   publishDir params.aligned_reads_dir, mode: "copy"
 
   input:
-    file 'samples.txt' from samples_file_ch
-    file "*" from aligned_reads_ch.collect()
+    file "*" from reads_counts_files_ch.collect()
 
   output:
-    file "*" into counts_table_ch
+    file "*" into counts_table_file_ch
 
   """
   #!/usr/bin/env r
@@ -226,14 +225,11 @@ process generateStarCountsTable {
   print("Make STAR counts table")
   print("")
 
-  # TODO: Get sample names from ff
-  ### Pull in sample names
-  study <- read.csv(Sys.glob(file.path("${params.raw_reads_dir}", "samples.txt")),
-    header=FALSE, row.names=1, stringsAsFactors=TRUE)
-
   ### Import data
-  ff <- list.files(file.path("${params.aligned_reads_dir}"),
-    pattern="ReadsPerGene.out.tab", full.names=TRUE)
+  ff <- list.files(
+    file.path("${params.aligned_reads_dir}"),
+    pattern="ReadsPerGene.out.tab", full.names=TRUE
+  )
 
   ## Remove the first 4 lines
   counts.files <- lapply(ff, read.table, skip = 4)
@@ -241,14 +237,19 @@ process generateStarCountsTable {
   ## Get counts aligned to the second, reverse, strand
   counts <- as.data.frame(sapply(counts.files, function(x) x[ , 4 ]))
 
+  ## Get sample names
+  samples <- sub(
+    "_[a-zA-Z0-9]*_[0-9]*_ReadsPerGene.out.tab", "",
+    sub("split_", "", basename(ff))
+  )
+
   ## Add column and row names
-  colnames(counts) <- rownames(study)
+  colnames(counts) <- samples
   row.names(counts) <- counts.files[[1]]\$V1
 
   ### Export unnormalized counts table
   write.csv(counts, file='STAR_Unnormalized_Counts.csv')
 
-  ### print session info
   print("Session Info below: ")
   print("")
   sessionInfo()
