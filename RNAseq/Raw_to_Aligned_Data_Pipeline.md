@@ -17,7 +17,7 @@
     - [**2b. Trimmed Data QC**](#2b-trimmed-data-qc)
     - [**2c. Compile Trimmed Data QC**](#2c-compile-trimmed-data-qc)
   - [**3. Split Fastq Files Based on Sequencing Run/Lane**](#3-split-fastq-files-based-on-sequencing-runlane)
-  - [**4. Remove Ribosomal RNA Reads from Split Fastq Files**] (#4-split-fastq-files-based-on-sequencing-runlane)
+  - [**4. Remove Ribosomal RNA Reads from Split Fastq Files**](#4-split-fastq-files-based-on-sequencing-runlane)
   - [**5. Retrieve Genome/Annotation Files and Build STAR Reference**](#5-retrieve-genomeannotation-files-and-build-star-reference)
     - [**5a. Get Genome and Annotation Files**](#5a-get-genome-and-annotation-files)
     - [**5b. Build STAR Reference**](#5b-build-star-reference)
