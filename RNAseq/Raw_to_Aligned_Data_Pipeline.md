@@ -17,15 +17,17 @@
     - [**2b. Trimmed Data QC**](#2b-trimmed-data-qc)
     - [**2c. Compile Trimmed Data QC**](#2c-compile-trimmed-data-qc)
   - [**3. Split Fastq Files Based on Sequencing Run/Lane**](#3-split-fastq-files-based-on-sequencing-runlane)
-  - [**4. Retrieve Genome/Annotation Files and Build STAR Reference**](#4-retrieve-genomeannotation-files-and-build-star-reference)
-    - [**4a. Get Genome and Annotation Files**](#4a-get-genome-and-annotation-files)
-    - [**4b. Build STAR Reference**](#4b-build-star-reference)
-  - [**5. Align Reads to Reference Genome with STAR and Generate STAR Counts Table**](#5-align-reads-to-reference-genome-with-star-and-generate-star-counts-table)
-    - [**5a. Align Reads to Reference Genome with STAR**](#5a-align-reads-to-reference-genome-with-star)
-    - [**5b. Generate STAR Counts Table in R**](#5b-generate-star-counts-table-in-r) 
-  - [**6. Sort and Index Genome-Aligned Data**](#6-sort-and-index-genome-aligned-data)
-    - [**6a. Sort Genome-Aligned Data**](#6a-sort-genome-aligned-data)
-    - [**6b. Index Sorted Genome-Aligned Data**](#6b-index-sorted-genome-aligned-data)
+  - [**4. Remove Ribosomal RNA Reads from Split Fastq Files**](#4-split-fastq-files-based-on-sequencing-runlane)
+  - [**5. Retrieve Genome/Annotation Files and Build STAR Reference**](#5-retrieve-genomeannotation-files-and-build-star-reference)
+    - [**5a. Get Genome and Annotation Files**](#5a-get-genome-and-annotation-files)
+    - [**5b. Build STAR Reference**](#5b-build-star-reference)
+  - [**6. Align Reads to Reference Genome with STAR and Generate STAR Counts Table**](#6-align-reads-to-reference-genome-with-star-and-generate-star-counts-table)
+    - [**6a. Align Reads to Reference Genome with STAR**](#6a-align-reads-to-reference-genome-with-star)
+    - [**6b. Generate STAR Counts Table in R**](#6b-generate-star-counts-table-in-r) 
+  - [**7. Sort and Index Genome-Aligned Data**](#7-sort-and-index-genome-aligned-data)
+    - [**7a. Sort Genome-Aligned Data**](#7a-sort-genome-aligned-data)
+    - [**7b. Index Sorted Genome-Aligned Data**](#7b-index-sorted-genome-aligned-data)
+  - [**8. Alignment Data QC**](#8-alignment-data-qc)
 
 ---
 
@@ -191,9 +193,39 @@ gdc-fastq-splitter -o /path/to/ouput/split/trimmed/reads/${sample}/${sample}_ \
 
 <br>
 
-## 4. Retrieve Genome/Annotation Files and Build STAR Reference
+## 4. Remove Ribosomal RNA Reads from Split Fastq Files
 
-### 4a. Get Genome and Annotation Files 
+Create list of split fastq files for all samples that will be held in the ${sample_fqsplit} variable below:
+
+```
+ls -1 *flowcell_lane#_R1.fq.gz | sed "s/_R1.fq.gz//" > samples_fqsplit.txt
+```
+
+Remove rRNA reads from each fastq file listed in `samples_fqsplit.txt`
+
+```
+hts_SeqScreener -L /path/to/HTStream_logs/${sample_fqsplit}_htsStats.log \
+  -1 /path/to/split/trimmed/reads/${sample_fqsplit}_R1.fq.gz \
+  -2 /path/to/split/trimmed/reads/${sample_fqsplit}_R2.fq.gz \
+  -s /path/to/Hsapiens_rRNA_RefSeq_sequence.fasta \
+  -x 0.20 \
+  -f /path/to/ouput/rRNA-removed/split/trimmed/reads/${sample_fqsplit}
+```
+
+**Input Data:**
+- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+
+**Output Data:**
+- \*flowcell_lane#_R\*.fastq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number with rRNA reads removed)
+- \*flowcell_lane#_R\*.htsStats.log (rRNA removal report)
+
+---
+
+<br>
+
+## 5. Retrieve Genome/Annotation Files and Build STAR Reference
+
+### 5a. Get Genome and Annotation Files 
 
 Get human fasta and gtf files from [Ensembl](https://www.ensembl.org/) - used for processing human-filtered data and needed to process unfiltered data
 
@@ -221,7 +253,7 @@ zcat Homo_sapiens.GRCh38.100.gtf.gz Sars_cov_2.ASM985889v3.101.gtf.gz > Homo_sap
 
 <br>
 
-### 4b. Build STAR Reference  
+### 5b. Build STAR Reference  
 
 ```
 STAR --runThreadN NumberOfThreads \
@@ -268,9 +300,9 @@ STAR genome reference, which consists of the following files:
 
 <br>
 
-## 5. Align Reads to Reference Genome with STAR and Generate STAR Counts Table
+## 6. Align Reads to Reference Genome with STAR and Generate STAR Counts Table
 
-### 5a. Align Reads to Reference Genome with STAR
+### 6a. Align Reads to Reference Genome with STAR
 
 ```
 STAR --twopassMode Basic \
@@ -326,7 +358,7 @@ STAR --twopassMode Basic \
 
 <br>
 
-### 5b. Generate STAR Counts Table in R
+### 6b. Generate STAR Counts Table in R
 
 ```R
 print("Make STAR counts table")
@@ -374,11 +406,11 @@ sessionInfo()
 
 <br>
 
-## 6. Sort and Index Genome-Aligned Data
+## 7. Sort and Index Genome-Aligned Data
 
 Due to issues with the sorted genome bam file from STAR (step 5a) this file must be subsequently sorted and indexed with samtools prior to downstream analyses.
 
-### 6a. Sort Genome-Aligned Data
+### 7a. Sort Genome-Aligned Data
 
 ```
 samtools sort -m AvailableMemoryPerThread \
@@ -395,7 +427,7 @@ samtools sort -m AvailableMemoryPerThread \
 
 <br>
 
-### 6b. Index Sorted Genome-Aligned Data
+### 7b. Index Sorted Genome-Aligned Data
 
 ```
 samtools index -@ NumberOfThreads \
