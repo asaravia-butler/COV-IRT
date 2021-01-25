@@ -339,6 +339,7 @@ STAR --twopassMode Basic \
 **Input Data:**
 - STAR genome reference (output from step 5b)
 - \*flowcell_lane#_R\*.fastq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number with rRNA reads removed from step 4)
+  
   Note: To process without removing rRNA reads, use \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3) as the input fastq files
 
 **Output Data:**
@@ -451,7 +452,7 @@ samtools index -@ NumberOfThreads \
 
 ### 8a. Create Reference Files
 
-Reference files used can be found in the [Reference_Files](https://github.com/asaravia-butler/COV-IRT/tree/main/RNAseq/Reference_Files) sub-directory. The commands used to create these reference files are below:
+Reference files used can be found in the [Reference_Files](Reference_Files) sub-directory. The commands used to create these reference files are below:
 
 **Create refFlat Reference**
 
