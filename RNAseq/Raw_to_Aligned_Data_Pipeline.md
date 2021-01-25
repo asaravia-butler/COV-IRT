@@ -28,6 +28,8 @@
     - [**7a. Sort Genome-Aligned Data**](#7a-sort-genome-aligned-data)
     - [**7b. Index Sorted Genome-Aligned Data**](#7b-index-sorted-genome-aligned-data)
   - [**8. Alignment Data QC**](#8-alignment-data-qc)
+    - [**8a. Create Reference Files**](#8a-create-reference-files)
+    - [**8b. Generate Alignment Data QC Metrics**](#8b-generate-alignment-data-qc-metrics)
 
 ---
 
@@ -447,7 +449,30 @@ samtools index -@ NumberOfThreads \
 
 ## 8. Alignment Data QC
 
-Reference files used can be found in the [Reference_Files](https://github.com/asaravia-butler/COV-IRT/tree/main/RNAseq/Reference_Files) sub-directory. 
+### 8a. Create Reference Files
+
+Reference files used can be found in the [Reference_Files](https://github.com/asaravia-butler/COV-IRT/tree/main/RNAseq/Reference_Files) sub-directory. The commands used to create these reference files are below:
+
+**Create refFlat Reference**
+
+**Define Genomic Location of rRNA Sequences in interval_list Format**
+
+```
+samtools view -H sample_Aligned.sortedByCoord_sorted.out.bam | grep '^@HD*' > Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt
+samtools view -H sample_Aligned.sortedByCoord_sorted.out.bam | grep '^@SQ*' >> Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt
+cat Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf | grep 'rRNA' | cut -s -f 1,4,5,7,9 >> Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt
+```
+
+**Input Data:**
+- sample_Aligned.sortedByCoord_sorted.out.bam (sorted bam file of one sample generated from the samtools sorted mapping to genome [step 7a](#7a-sort-genome-aligned-data); Note: In does not matter which sample you use since the @HD and @SQ lines will be the same for each sample)
+- Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf (gtf file containing human and SARS-CoV-2 annotated genes from [step 5a](#5a-get-genome-and-annotation-files))
+
+**Output Data:**
+- Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt (genomic locations of rRNA sequences in interval_list format - you can download this reference [here]())
+
+<br>
+
+### 8b. Generate Alignment Data QC Metrics
 
 Generate RNAseq metrics for each sample with [GATK CollectRnaSeqMetrics](https://gatk.broadinstitute.org/hc/en-us/articles/360037057492-CollectRnaSeqMetrics-Picard-)
 
@@ -461,7 +486,7 @@ gatk CollectRnaSeqMetrics -I /path/to/STAR/output/directory/${sample}/${sample}_
 ```
 
 **Input Data:**
-- *Aligned.sortedByCoord_sorted.out.bam (samtools sorted mapping to genome file from step 6a)
+- *Aligned.sortedByCoord_sorted.out.bam (samtools sorted mapping to genome file from step 7a)
 - Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt (gene annotations in refFlat format - you can download this reference [here]())
 - Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt (genomic locations of rRNA sequences in interval_list format - you can download this reference [here]())
 
