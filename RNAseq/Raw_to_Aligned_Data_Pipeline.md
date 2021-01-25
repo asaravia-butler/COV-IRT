@@ -45,6 +45,9 @@
 |gdc-fastq-splitter|`gdc-fastq-splitter --version`|[https://github.com/kmhernan/gdc-fastq-splitter](https://github.com/kmhernan/gdc-fastq-splitter)|
 |STAR|`STAR --version`|[https://github.com/alexdobin/STAR](https://github.com/alexdobin/STAR)|
 |Samtools|`samtools --version`|[http://www.htslib.org/](http://www.htslib.org/)|
+|HTStream|`hts_SeqScreener --version`|[https://s4hts.github.io/HTStream/](https://s4hts.github.io/HTStream/)|
+|gtfToGenePred|No `version` command listed|[https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html)
+|gatk|`gatk --version`|[https://gatk.broadinstitute.org/](https://gatk.broadinstitute.org/)|
 
 >**\*** Exact versions used to process specific cohorts are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory. 
 
@@ -466,7 +469,7 @@ rm refFlat.tmp.txt
 - Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf (gtf file containing human and SARS-CoV-2 annotated genes from [step 5a](#5a-get-genome-and-annotation-files))
 
 **Output Data:**
-- Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt (gene annotations in refFlat format - you can download this reference [here]())
+- Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt (gene annotations in refFlat format - you can download this reference [here](Reference_Files/Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt.gz))
 
 <br>
 
@@ -483,7 +486,7 @@ cat Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf | grep 'rRNA' | c
 - Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf (gtf file containing human and SARS-CoV-2 annotated genes from [step 5a](#5a-get-genome-and-annotation-files))
 
 **Output Data:**
-- Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt (genomic locations of rRNA sequences in interval_list format - you can download this reference [here]())
+- Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt (genomic locations of rRNA sequences in interval_list format - you can download this reference [here](Reference_Files/Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt))
 
 <br>
 
@@ -502,8 +505,10 @@ gatk CollectRnaSeqMetrics -I /path/to/STAR/output/directory/${sample}/${sample}_
 
 **Input Data:**
 - *Aligned.sortedByCoord_sorted.out.bam (samtools sorted mapping to genome file from step 7a)
-- Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt (gene annotations in refFlat format - you can download this reference [here]())
-- Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt (genomic locations of rRNA sequences in interval_list format - you can download this reference [here]())
+- Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt (gene annotations in refFlat format - you can download this reference [here](Reference_Files/Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt.gz))
+
+  Note: This file needs to be gunzipped prior to running this command.
+- Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt (genomic locations of rRNA sequences in interval_list format - you can download this reference [here](Reference_Files/Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt))
 
 **Output Data:**
 - \*_Metrics (file containing metrics about the alignment of RNAseq reads, complete list of metrics generated can be found [here](http://broadinstitute.github.io/picard/picard-metric-definitions.html#RnaSeqMetrics))
