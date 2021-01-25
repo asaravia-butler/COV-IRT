@@ -169,6 +169,7 @@ process alignReadsToReferenceGenome {
   output:
     file "*ReadsPerGene.out.tab" into reads_counts_files_ch
     file "*_Aligned.sortedByCoord.out.bam" into aligned_reads_files_ch
+    file "*_Aligned.toTranscriptome.out.bam" into aligned_transcriptome_reads_files_ch
 
   """
   sample=`echo ${split_reads_one_file} | sed s/split_// | sed s/_[a-zA-Z0-9]*_[0-9]*_R1.fq.gz//`
