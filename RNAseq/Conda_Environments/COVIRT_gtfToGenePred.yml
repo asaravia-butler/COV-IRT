@@ -1,0 +1,6 @@
+name: COVIRT_gtfToGenePred
+channels:
+  - bioconda
+
+dependencies:
+  - ucsc-gtftogenepred
