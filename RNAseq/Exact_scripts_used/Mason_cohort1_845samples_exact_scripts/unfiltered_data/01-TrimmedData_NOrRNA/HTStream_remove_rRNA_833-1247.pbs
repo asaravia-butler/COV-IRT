@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -l select=1:ncpus=24:model=has
+#PBS -l walltime=18:00:00
+#PBS -N COVIRT_HTStream_rRNA_fqsplit_all-reads_833-1247
+#PBS -q covid19
+#PBS -J 833-1247
+#PBS -M amanda.m.saravia-butler@nasa.gov
+#PBS -m abe
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+start=$(date +%s)
+echo "start time: $start"
+echo "ran on node: "
+cat $PBS_NODEFILE 
+echo "My PBS_ARRAY_INDEX_ID: " $PBS_ARRAY_INDEX
+
+## Define Directory Paths ##
+in_dir=/nobackupp13/asaravia/COVIRT_all_data/01-TrimmedData/Fastq_RG
+out_dir=/nobackupp13/asaravia/COVIRT_all_data/COVIRT_all_data_rRNA_removed/01-TrimmedData
+rRNA_fa=/nobackupp13/asaravia/genome_files/Homo_sapiens/RefSeq
+
+## Load HTStream Module ##
+module load /nobackupp16/swbuild/hsp/COVID19/anaconda3.modulefile
+source activate COVIRT_HTStream
+
+
+sample=$(cat samples_fqsplit.txt | sed -n ${PBS_ARRAY_INDEX}p)
+
+echo "SAMPLE: ${sample}"
+echo " "
+echo "HTStream version: "
+hts_Stats --version
+echo " "
+
+call="hts_SeqScreener -L $out_dir/HTStream_logs/${sample}_htsStats.log \
+-1 $in_dir/${sample}_R1.fq.gz \
+-2 $in_dir/${sample}_R2.fq.gz \
+-s $rRNA_fa/Hsapiens_rRNA_RefSeq_sequence.fasta \
+-x 0.20 \
+-f $out_dir/Fastq_RG/${sample}"
+
+echo $call
+eval $call
+
+echo " "
+end=$(date +%s)
+echo "end time: $end"
+runtime_s=$(echo $(( end - start )))
+echo "total run time(s): $runtime_s"
+sec_per_min=60
+sec_per_hr=3600
+runtime_m=$(echo "scale=2; $runtime_s / $sec_per_min;" | bc)
+echo "total run time(m): $runtime_m"
+runtime_h=$(echo "scale=2; $runtime_s / $sec_per_hr;" | bc)
+echo "total run time(h): $runtime_h"
