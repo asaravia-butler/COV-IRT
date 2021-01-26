@@ -3,10 +3,9 @@
 #PBS -S /bin/bash
 #PBS -l select=1:ncpus=24:model=has
 #PBS -l walltime=18:00:00
-#PBS -N COVIRT_HTStream_rRNA_fqsplit_all-reads
+#PBS -N COVIRT_HTStream_rRNA_fqsplit_all-reads_1-416
 #PBS -q covid19
 #PBS -J 1-416
-#PBS -M amanda.m.saravia-butler@nasa.gov
 #PBS -m abe
 #PBS -j oe
 
@@ -19,12 +18,12 @@ cat $PBS_NODEFILE
 echo "My PBS_ARRAY_INDEX_ID: " $PBS_ARRAY_INDEX
 
 ## Define Directory Paths ##
-in_dir=/nobackupp13/asaravia/COVIRT_all_data/01-TrimmedData/Fastq_RG
-out_dir=/nobackupp13/asaravia/COVIRT_all_data/COVIRT_all_data_rRNA_removed/01-TrimmedData
-rRNA_fa=/nobackupp13/asaravia/genome_files/Homo_sapiens/RefSeq
+in_dir=/path/to/01-TrimmedData/Fastq_RG
+out_dir=/path/to/COVIRT_all_data_rRNA_removed/01-TrimmedData
+rRNA_fa=/path/to/genome_files/Homo_sapiens/RefSeq
 
 ## Load HTStream Module ##
-module load /nobackupp16/swbuild/hsp/COVID19/anaconda3.modulefile
+module load /path/to/hsp/COVID19/anaconda3.modulefile
 source activate COVIRT_HTStream
 
 
@@ -39,7 +38,7 @@ echo " "
 call="hts_SeqScreener -L $out_dir/HTStream_logs/${sample}_htsStats.log \
 -1 $in_dir/${sample}_R1.fq.gz \
 -2 $in_dir/${sample}_R2.fq.gz \
--s $rRNA_fa/Hsapiens_rRNA_RefSeq_sequence.fasta \
+-s $rRNA_fa/Hsapiens_rRNA_RefSeq_seq_w_mitrRNA_ITS_ETS.fasta \
 -x 0.20 \
 -f $out_dir/Fastq_RG/${sample}"
 
