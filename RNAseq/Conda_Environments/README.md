@@ -11,7 +11,7 @@
 
 <br>
 
-### Install the conda environments by downloading the respective yaml file then run the following command for each conda environment needed:
+### Install each conda environment by downloading the respective yaml file then runnning the following command:
 
   ```
   conda env create -f conda_env_name.yml
