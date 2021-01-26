@@ -29,6 +29,7 @@
   - COVIRT_HTStream
   - COVIRT_RNAseq_R_tools
   - COVIRT_fastq_to_alignment
+  - COVIRT_fgbio
   - COVIRT_gtfToGenePred
   - COVIRT_nextflow
   - COVIRT_rsem
