@@ -50,11 +50,12 @@
 |gatk|`gatk --version`|[https://gatk.broadinstitute.org/](https://gatk.broadinstitute.org/)|
 
 >**\*** Exact versions used to process specific cohorts are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory. 
+>
 >**\*** All tools needed (except gdc-fastq-splitter) can be installed via conda with the following [conda environments](https://github.com/asaravia-butler/COV-IRT/tree/main/RNAseq/Conda_Environments):
-  - COVIRT_GATK
-  - COVIRT_HTStream
-  - COVIRT_fastq_to_alignment
-  - COVIRT_gtfToGenePred
+>  - COVIRT_GATK
+>  - COVIRT_HTStream
+>  - COVIRT_fastq_to_alignment
+>  - COVIRT_gtfToGenePred
 
 ---
 
