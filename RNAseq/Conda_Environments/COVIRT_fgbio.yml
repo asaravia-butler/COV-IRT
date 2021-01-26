@@ -1,0 +1,6 @@
+name: COVIRT_fgbio
+channels:
+  - bioconda
+
+dependencies:
+  - fgbio
