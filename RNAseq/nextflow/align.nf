@@ -133,8 +133,7 @@ process splitTrimmedReads {
     file trimmed_reads_two_file from trimmed_reads_two_files_ch
 
   output:
-    file "split_*_R1.fq.gz" into split_reads_one_files_ch
-    file "split_*_R2.fq.gz" into split_reads_two_files_ch
+    file "*.csv" into split_reads_flowcells_files_ch
 
   """
   sample=`echo ${trimmed_reads_one_file} | sed s/_R1_P_trimmed.fq.gz//`
@@ -143,16 +142,31 @@ process splitTrimmedReads {
   rm ${trimmed_reads_two_file}
   cp ${params.trimmed_reads_dir}/${trimmed_reads_one_file} .
   cp ${params.trimmed_reads_dir}/${trimmed_reads_two_file} .
+
+  # Split reads
   docker run -v \${PWD}:/opt --rm \
     quay.io/kmhernan/gdc-fastq-splitter -o split_\${sample}_ \
     ${trimmed_reads_one_file} ${trimmed_reads_two_file}
+
+  # Handle multiple flowcells per sample
+  echo "sample,flowcell" > split_\${sample}_flowcells.csv
+  for flowcell in `ls -1 split_*_R1.fq.gz \
+    | xargs -L 1 basename \
+    | sed s/split_// \
+    | sed s/\${sample}// \
+    | cut -d "_" -f 2 \
+    | uniq`; do
+    echo \${sample},\${flowcell} \
+      >> split_\${sample}_flowcells.csv
+  done
   """
 }
 
 params.ensembl_data_dir = "/home/ubuntu/COV-IRT-Data"
 params.genome_dir = params.ensembl_data_dir + "/filtered"
+// TODO: Understand why this value is needed
 // TODO: Automate setting of this value
-params.index = 3
+// params.index = 3
 
 params.aligned_reads_dir = params.raw_reads_dir + "/aligned_reads"
 
@@ -163,8 +177,9 @@ process alignReadsToReferenceGenome {
   publishDir params.aligned_reads_dir, mode: "copy"
 
   input:
-    file split_reads_one_file from split_reads_one_files_ch
-    file split_reads_two_file from split_reads_two_files_ch
+    tuple sample, flowcell from split_reads_flowcells_files_ch
+        .splitCsv(header:true)
+        .map{row -> tuple(row.sample, row.flowcell)}
 
   output:
     file "*ReadsPerGene.out.tab" into reads_counts_files_ch
@@ -172,44 +187,72 @@ process alignReadsToReferenceGenome {
     file "*_Aligned.toTranscriptome.out.bam" into aligned_transcriptome_reads_files_ch
 
   """
-  sample=`echo ${split_reads_one_file} | sed s/split_// | sed s/_[a-zA-Z0-9]*_[0-9]*_R1.fq.gz//`
-  # Remove links and copy in reads files
-  rm ${split_reads_one_file}
-  rm ${split_reads_two_file}
-  cp ${params.split_reads_dir}/${split_reads_one_file} .
-  cp ${params.split_reads_dir}/${split_reads_two_file} .
+  # Copy in reads files (can't use links anyway)
+  cp ${params.split_reads_dir}/split_${sample}_${flowcell}_*.fq.gz .
+
+  # Find unique lanes
+  lanes=`ls -1 *.fq.gz \
+    | xargs -L 1 basename \
+    | sed s/split_// \
+    | sed s/${sample}// \
+    | cut -d "_" -f 3 \
+    | sort \
+    | uniq`
+  outSAMattrRGlineStr=""
+  readOneFilesIn=""
+  for lane in \${lanes}; do
+
+    # Accumulate value for --outSAMattrRGline
+    str="ID:${flowcell}.\${lane} PL:ILLUMINA PU:${flowcell}.\${lane} LB:${sample} SM:${sample}"
+    if [ -z "\${outSAMattrRGlineStr}" ]; then
+      outSAMattrRGlineStr="\$str"
+    else
+      outSAMattrRGlineStr="\${outSAMattrRGlineStr}, \$str"
+    fi
+
+    # Accumulate value for --readFilesIn
+    str=split_${sample}_${flowcell}_\${lane}_R1.fq.gz
+    if [ -z "\${readOneFilesIn}" ]; then
+      readOneFilesIn="\${str}"
+    else
+      readOneFilesIn="\${readOneFilesIn},\${str}"
+    fi
+  done
+  readTwoFilesIn=`echo \${readOneFilesIn} | sed s/R1/R2/g`
+  readFilesInStr="\${readOneFilesIn} \${readTwoFilesIn}"
+
+  # Align reads
   STAR \
-    --twopassMode Basic \
-    --limitBAMsortRAM 65000000000 \
-    --genomeDir ${params.genome_dir} \
-    --outSAMunmapped Within \
-    --outFilterType BySJout \
-    --outSAMattributes NH HI AS nM NM MD jM jI MC ch \
-    --outSAMattrRGline \
-        ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${params.index} LB:\${sample} SM:\${sample}, \
-        ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${params.index} LB:\${sample} SM:\${sample} \
-    --outFilterMultimapNmax 20 \
-    --outFilterMismatchNmax 999 \
-    --outFilterMismatchNoverReadLmax 0.04 \
-    --alignIntronMin 20 \
-    --alignIntronMax 1000000 \
-    --alignMatesGapMax 1000000 \
-    --alignSJoverhangMin 8 \
-    --alignSJDBoverhangMin 1 \
-    --sjdbScore 1 \
-    --readFilesCommand zcat \
-    --runThreadN ${params.numberOfThreads} \
-    --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
-    --chimOutJunctionFormat 1 \
-    --chimSegmentMin 20 \
-    --outSAMtype BAM SortedByCoordinate \
-    --quantMode TranscriptomeSAM GeneCounts \
-    --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-    --outFileNamePrefix \${sample}_ \
-    --readFilesIn ${split_reads_one_file} ${split_reads_two_file}
+  --twopassMode Basic \
+  --limitBAMsortRAM 65000000000 \
+  --genomeDir ${params.genome_dir} \
+  --outSAMunmapped Within \
+  --outFilterType BySJout \
+  --outSAMattributes NH HI AS nM NM MD jM jI MC ch \
+  --outSAMattrRGline \${outSAMattrRGlineStr} \
+  --outFilterMultimapNmax 20 \
+  --outFilterMismatchNmax 999 \
+  --outFilterMismatchNoverReadLmax 0.04 \
+  --alignIntronMin 20 \
+  --alignIntronMax 1000000 \
+  --alignMatesGapMax 1000000 \
+  --alignSJoverhangMin 8 \
+  --alignSJDBoverhangMin 1 \
+  --sjdbScore 1 \
+  --readFilesCommand zcat \
+  --runThreadN ${params.numberOfThreads} \
+  --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
+  --chimOutJunctionFormat 1 \
+  --chimSegmentMin 20 \
+  --outSAMtype BAM SortedByCoordinate \
+  --quantMode TranscriptomeSAM GeneCounts \
+  --outSAMheaderHD @HD VN:1.4 SO:coordinate \
+  --outFileNamePrefix ${sample}_ \
+  --readFilesIn \${readFilesInStr}
   """
 }
 
+/*
 process generateStarCountsTable {
 
   publishDir params.aligned_reads_dir, mode: "copy"
@@ -282,3 +325,4 @@ process sortAndIndexAlignedReads {
     -@ ${params.NumberOfThreads} \${sorted_reads_file}
   """
 }
+*/
