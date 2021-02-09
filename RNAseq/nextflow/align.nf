@@ -133,6 +133,8 @@ process splitTrimmedReads {
     file trimmed_reads_two_file from trimmed_reads_two_files_ch
 
   output:
+    file "split_*_R1.fq.gz" into split_reads_one_files_ch
+    file "split_*_R2.fq.gz" into split_reads_two_files_ch
     file "*.csv" into split_reads_flowcells_files_ch
 
   """
