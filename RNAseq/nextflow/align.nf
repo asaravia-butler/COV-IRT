@@ -225,36 +225,35 @@ process alignReadsToReferenceGenome {
 
   # Align reads
   STAR \
-  --twopassMode Basic \
-  --limitBAMsortRAM 65000000000 \
-  --genomeDir ${params.genome_dir} \
-  --outSAMunmapped Within \
-  --outFilterType BySJout \
-  --outSAMattributes NH HI AS nM NM MD jM jI MC ch \
-  --outSAMattrRGline \${outSAMattrRGlineStr} \
-  --outFilterMultimapNmax 20 \
-  --outFilterMismatchNmax 999 \
-  --outFilterMismatchNoverReadLmax 0.04 \
-  --alignIntronMin 20 \
-  --alignIntronMax 1000000 \
-  --alignMatesGapMax 1000000 \
-  --alignSJoverhangMin 8 \
-  --alignSJDBoverhangMin 1 \
-  --sjdbScore 1 \
-  --readFilesCommand zcat \
-  --runThreadN ${params.numberOfThreads} \
-  --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
-  --chimOutJunctionFormat 1 \
-  --chimSegmentMin 20 \
-  --outSAMtype BAM SortedByCoordinate \
-  --quantMode TranscriptomeSAM GeneCounts \
-  --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-  --outFileNamePrefix ${sample}_ \
-  --readFilesIn \${readFilesInStr}
+    --twopassMode Basic \
+    --limitBAMsortRAM 65000000000 \
+    --genomeDir ${params.genome_dir} \
+    --outSAMunmapped Within \
+    --outFilterType BySJout \
+    --outSAMattributes NH HI AS nM NM MD jM jI MC ch \
+    --outSAMattrRGline \${outSAMattrRGlineStr} \
+    --outFilterMultimapNmax 20 \
+    --outFilterMismatchNmax 999 \
+    --outFilterMismatchNoverReadLmax 0.04 \
+    --alignIntronMin 20 \
+    --alignIntronMax 1000000 \
+    --alignMatesGapMax 1000000 \
+    --alignSJoverhangMin 8 \
+    --alignSJDBoverhangMin 1 \
+    --sjdbScore 1 \
+    --readFilesCommand zcat \
+    --runThreadN ${params.numberOfThreads} \
+    --chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
+    --chimOutJunctionFormat 1 \
+    --chimSegmentMin 20 \
+    --outSAMtype BAM SortedByCoordinate \
+    --quantMode TranscriptomeSAM GeneCounts \
+    --outSAMheaderHD @HD VN:1.4 SO:coordinate \
+    --outFileNamePrefix ${sample}_${flowcell}_ \
+    --readFilesIn \${readFilesInStr}
   """
 }
 
-/*
 process generateStarCountsTable {
 
   publishDir params.aligned_reads_dir, mode: "copy"
@@ -327,4 +326,3 @@ process sortAndIndexAlignedReads {
     -@ ${params.NumberOfThreads} \${sorted_reads_file}
   """
 }
-*/
