@@ -32,7 +32,7 @@ process markDuplicates {
     echo Sample \$sample
 
     # Marking duplicate reads
-    ~/setups/gatk-4.0.10.1/gatk MarkDuplicates -I ${aligned_reads} \
+    ~/setups/gatk-4.0.10.1/gatk MarkDuplicates -I ${aligned_reads_file} \
             -O ./\${sample}_marked_duplicates.bam \
             -M ./\${sample}_marked_dup_metrics.txt
 
@@ -54,7 +54,7 @@ process splitReads {
         file dupe_marked_bam from dupe_marked_bams_ch
     
     output:
-        file "*Split.bam" into cigar_split_bams_ch
+        file "*Split.bam" into cigar_split_bams_1_ch, cigar_split_bams_2_ch
     
     """
     sample=`echo ${aligned_reads_file} | sed 's/_marked_duplicates.bam//'`
@@ -82,10 +82,10 @@ process generateRecalTable {
     publishDir params.variant_calling_op_dir, mode: "copy"
 
     input:
-        file cigar_split_bam from cigar_split_bams_ch
+        file cigar_split_bam from cigar_split_bams_1_ch
     
     output:
-        file "*recal_data.table" into recal_tables_ch
+        file "*recal_data.table" into recal_tables_1_ch, recal_tables_2_ch
 
     """
     sample=`echo ${aligned_reads_file} | sed 's/_Split.bam//'`
@@ -101,7 +101,6 @@ process generateRecalTable {
     """
 }
 
-# Sorry for the long name... \o/
 process compareBaseQualityScoreRecalTables {
     // TODO: Uncomment
     // label: "covirt_gatk"
@@ -109,7 +108,7 @@ process compareBaseQualityScoreRecalTables {
     publishDir params.variant_calling_op_dir, mode: "copy"
 
     input:
-        file recal_table from recal_tables_ch
+        file recal_table from recal_tables_1_ch
     
     output:
         file "*AnalyzeCovariates.pdf" into comparison_reports_ch
@@ -119,7 +118,7 @@ process compareBaseQualityScoreRecalTables {
 
     echo Sample \$sample
 
-    ~/setups/gatk-4.0.10.1/gatk --java-options "-Xmx100G" AnalyzeCovariates -bqsr ${recal_table} \
+    ~/setups/gatk-4.0.10.1/gatk --java-options '-Xmx100G' AnalyzeCovariates -bqsr ${recal_table} \
           -plots ./\${sample}_AnalyzeCovariates.pdf
     """
 }
@@ -131,8 +130,8 @@ process applyBQSR {
     publishDir params.variant_calling_op_dir, mode: "copy"
 
     input:
-        file recal_table from recal_tables_ch
-        file cigar_split_bam from cigar_split_bams_ch
+        file recal_table from recal_tables_2_ch
+        file cigar_split_bam from cigar_split_bams_2_ch
     
     output:
         file "*BSQR-applied.out.bam" into bqsr_bams_ch
@@ -142,10 +141,12 @@ process applyBQSR {
 
     echo Sample \$sample
 
-    gatk --java-options "-Xmx100G" ApplyBQSR -R ${params.ref_genome} \
+    ~/setups/gatk-4.0.10.1/gatk --java-options "-Xmx100G" ApplyBQSR -R ${params.ref_genome} \
         -I ${cigar_split_bam} \
         --bqsr-recal-file ${recal_table} \
         -O ./\${sample}_BSQR-applied.out.bam
+    
+    """
 
 }
 
@@ -167,7 +168,7 @@ process callVariants {
 
     echo Sample \$sample
 
-    gatk --java-options "-Xmx100G" HaplotypeCaller -R ${params.ref_genome} \
+    ~/setups/gatk-4.0.10.1/gatk --java-options "-Xmx100G" HaplotypeCaller -R ${params.ref_genome} \
         -I ${bqsr_bam} \
         -O ./\${sample}_${chr}.vcf.gz \
         -ERC GVCF \
@@ -179,22 +180,57 @@ process callVariants {
     """
 }
 
+params.genomics_db = params.variant_calling_op_dir + "/genomics_db/"
+
 process makeGenomicsDB {
     // TODO: Uncomment
     // label: "covirt_gatk"
 
-    publishDir params.variant_calling_op_dir, mode: "copy"
+    publishDir params.genomics_db, mode: "copy"
 
     input:
         // TODO: Check whether we're okay doing only autosomes
-        each chr in 1..22
+        each chr from 1..22
         file all_gvcfs from gvcf_ch.collect()
     
     output:
-        file "*vcf.gz" into gvcf_ch
+        file "*database" into genomics_db_ch
     
     """
     # Generating sample map of all generated VCF files
+    echo ${all_gvcfs} \
+    | sed 's/ /\\n/g' \
+    | grep chr${chr}.vcf.gz \
+    | awk 'BEGIN{OFS = "\t"} {sample = gensub(/_[[:alnum:]]+\\.vcf\\.gz/, "", \$1); print sample, \$1}' > sample_map_${chr}.txt
     
-
+    ~/setups/gatk-4.0.10.1/gatk --java-options "-Xmx40G" GenomicsDBImport 
+    --sample-name-map sample_map_${chr}.txt \
+    --genomicsdb-workspace-path ./${chr}_database \
+    --intervals ${chr}
+    """
 }
+
+process jointGenotyping {
+  // TODO: Uncomment
+  // label: "covirt_gatk"
+
+  publishDir params.variant_calling_op_dir, mode: "copy"
+
+  input:
+    file genomics_db from genomics_db_ch
+
+  output:
+    file "*Geno_out.vcf.gz" into joint_called_ch
+
+  """
+  # Getting chromosome number
+  chr_num=`echo ${genomics_db} | sed 's/_database//; s/chr//'`
+  ~/setups/gatk-4.0.10.1/gatk --java-options "-Xmx40G" GenotypeGVCFs -R ${params.ref_genome} \
+   -V ${genomics_db} \
+   -G StandardAnnotation \
+   -G AS_StandardAnnotation \
+   -O ./\$chr_Geno_out.vcf.gz
+  """
+}
+
+
