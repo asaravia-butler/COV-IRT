@@ -1,0 +1,6 @@
+name: COVIRT_nextflow
+channels:
+  - bioconda
+
+dependencies:
+  - nextflow

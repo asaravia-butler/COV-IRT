@@ -1,0 +1,23 @@
+name: COVIRT_RNAseq_R_tools
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+  - conda-forge/label/broken
+
+dependencies:
+  - r-base=4.0.3
+  - r-tidyverse
+  - r-dplyr
+  - r-reshape2
+  - r-ggfortify
+  - r-ggdendro
+  - bioconductor-deseq2
+  - libopenblas=0.3.7
+  - bioconductor-tximport
+  - bioconductor-stringdb
+  - bioconductor-panther.db
+  - bioconductor-org.hs.eg.db
+  - bioconductor-org.mm.eg.db
+  - bioconductor-ComplexHeatmap
+  - bioconductor-EnhancedVolcano

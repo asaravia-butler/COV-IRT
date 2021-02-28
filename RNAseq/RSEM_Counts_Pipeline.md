@@ -29,6 +29,10 @@
 |tidyverse|`packageVersion("tidyverse")`|[https://www.tidyverse.org](https://www.tidyverse.org)|
 
 >**\*** Exact versions used to process specific cohorts are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory. 
+>
+>**\*** All tools needed can be installed via conda with the following [conda environments](https://github.com/asaravia-butler/COV-IRT/tree/main/RNAseq/Conda_Environments):
+>  - COVIRT_rsem
+>  - COVIRT_RNAseq_R_tools 
 
 ---
 

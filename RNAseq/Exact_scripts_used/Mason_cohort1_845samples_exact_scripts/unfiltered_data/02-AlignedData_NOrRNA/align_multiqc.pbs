@@ -1,0 +1,35 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -l select=1:ncpus=24:model=has
+#PBS -l walltime=10:00:00
+#PBS -N COVIRT_align_multiqc_all
+#PBS -q covid19
+#PBS -m abe
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+start=$(date +%s)
+echo "start time: $start"
+echo "ran on node: "
+cat $PBS_NODEFILE
+
+in_dir=/path/to/COVIRT_all_data_rRNA_removed/02-AlignedData/Log_final_out_all_samples
+out_dir=/path/to/COVIRT_all_data_rRNA_removed/02-AlignedData/Log_final_out_all_samples/alignment_multiQC
+
+call="multiqc -n alignment_multiqc -o $out_dir $in_dir/"
+
+echo $call
+eval $call
+
+end=$(date +%s)
+echo "end time: $end"
+runtime_s=$(echo $(( end - start )))
+echo "total run time(s): $runtime_s"
+sec_per_min=60
+sec_per_hr=3600
+runtime_m=$(echo "scale=2; $runtime_s / $sec_per_min;" | bc)
+echo "total run time(m): $runtime_m"
+runtime_h=$(echo "scale=2; $runtime_s / $sec_per_hr;" | bc)
+echo "total run time(h): $runtime_h"
