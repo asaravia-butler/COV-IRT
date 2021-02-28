@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -l select=1:ncpus=24:model=has
+#PBS -l walltime=48:00:00
+#PBS -N COVIRT_STAR_H5MNLDSXY_3-4_all-reads
+#PBS -q covid19
+#PBS -J 1-78
+#PBS -m abe
+#PBS -j oe
+
+cd $PBS_O_WORKDIR
+
+start=$(date +%s)
+echo "start time: $start"
+echo "ran on node: "
+cat $PBS_NODEFILE 
+echo "My PBS_ARRAY_INDEX_ID: " $PBS_ARRAY_INDEX
+
+in_dir=/path/to/COVIRT_all_data_rRNA_removed/01-TrimmedData/Fastq_RG
+out_dir=/path/to/COVIRT_all_data_rRNA_removed/02-AlignedData
+
+REF=/path/to/STAR_Indices/Homo_sapiens_and_SARS-CoV-2_ensembl_RL-151
+GTF=/path/to/genome_files/Homo_sapiens/ensembl_release100/Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf
+
+sample=$(cat samples_H5MNLDSXY_3-4.txt | sed -n ${PBS_ARRAY_INDEX}p)
+index=$(cat indices_H5MNLDSXY_3-4.txt | sed -n ${PBS_ARRAY_INDEX}p)
+
+echo "STAR version: "
+STAR --version
+
+
+mkdir $out_dir/${sample}
+echo "SAMPLE: ${sample}"
+echo "INDEX: ${index}"
+
+call="STAR --twopassMode Basic \
+--limitBAMsortRAM 105000000000 \
+--genomeDir $REF \
+--outSAMunmapped Within \
+--outFilterType BySJout \
+--outSAMattributes NH HI AS nM NM MD jM jI MC ch \
+--outSAMattrRGline ID:H5MNLDSXY.3 PL:ILLUMINA PU:H5MNLDSXY.3.${index} LB:${sample} SM:${sample} , ID:H5MNLDSXY.4 PL:ILLUMINA PU:H5MNLDSXY.4.${index} LB:${sample} SM:${sample} \
+--outFilterMultimapNmax 20 \
+--outFilterMismatchNmax 999 \
+--outFilterMismatchNoverReadLmax 0.04 \
+--alignIntronMin 20 \
+--alignIntronMax 1000000 \
+--alignMatesGapMax 1000000 \
+--alignSJoverhangMin 8 \
+--alignSJDBoverhangMin 1 \
+--sjdbScore 1 \
+--readFilesCommand zcat \
+--runThreadN 44 \
+--chimOutType Junctions SeparateSAMold WithinBAM SoftClip \
+--chimOutJunctionFormat 1 \
+--chimSegmentMin 20 \
+--outSAMtype BAM SortedByCoordinate \
+--quantMode TranscriptomeSAM GeneCounts \
+--outSAMheaderHD @HD VN:1.4 SO:coordinate \
+--outFileNamePrefix $out_dir/${sample}/${sample}_ \
+--readFilesIn $in_dir/${sample}/${sample}_H5MNLDSXY_3_R1.fastq.gz,$in_dir/${sample}/${sample}_H5MNLDSXY_4_R1.fastq.gz $in_dir/${sample}/${sample}_H5MNLDSXY_3_R2.fastq.gz,$in_dir/${sample}/${sample}_H5MNLDSXY_4_R2.fastq.gz"
+
+echo $call
+eval $call
+
+end=$(date +%s)
+echo "end time: $end"
+runtime_s=$(echo $(( end - start )))
+echo "total run time(s): $runtime_s"
+sec_per_min=60
+sec_per_hr=3600
+runtime_m=$(echo "scale=2; $runtime_s / $sec_per_min;" | bc)
+echo "total run time(m): $runtime_m"
+runtime_h=$(echo "scale=2; $runtime_s / $sec_per_hr;" | bc)
+echo "total run time(h): $runtime_h"

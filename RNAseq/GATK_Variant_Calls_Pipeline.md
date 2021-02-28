@@ -42,6 +42,12 @@
 |fgbio|`fgbio --version`|[http://fulcrumgenomics.github.io/fgbio/](http://fulcrumgenomics.github.io/fgbio/)|
 
 >**\*** Exact versions used to process specific cohorts are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory. 
+>
+>**\*** All tools needed can be installed via conda with the following [conda environments](https://github.com/asaravia-butler/COV-IRT/tree/main/RNAseq/Conda_Environments):
+>  - COVIRT_GATK
+>  - COVIRT_fastq_to_alignment
+>  - COVIRT_fgbio
+>  - Note: [R](https://www.r-project.org/) version >3.6.3 is also reguired to run [step 7](#7-evaluate-and-compare-base-quality-score-recalibration-tables)
 
 ---
 

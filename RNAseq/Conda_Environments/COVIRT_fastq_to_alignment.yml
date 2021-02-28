@@ -1,0 +1,15 @@
+name: COVIRT_fastq_to_alignment
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python
+  - bcftools
+  - fastqc
+  - multiqc
+  - qualimap
+  - rseqc
+  - samtools
+  - star
+  - trimmomatic
