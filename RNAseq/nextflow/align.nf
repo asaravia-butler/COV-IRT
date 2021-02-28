@@ -1,17 +1,12 @@
 #!/usr/bin/env nextflow
 
-// TODO: Understand data storage on NASA cluster
-
-// TODO: Move into config file
-params.raw_reads_dir = "/home/ubuntu/COV-IRT/RNAseq/Fastq_Input_Files_for_Testing"
-
 raw_reads_files_ch = Channel.fromPath(params.raw_reads_dir + "/*.fastq.gz")
 
 params.raw_fastqc_dir = params.raw_reads_dir + "/raw_fastqc"
 
 process createRawReadsQC {
 
-  label "align"
+  label "COVIRT_fastq_to_alignment"
 
   publishDir params.raw_fastqc_dir, mode: "copy"
 
@@ -30,7 +25,7 @@ params.raw_multiqc_dir = params.raw_reads_dir + "/raw_multiqc"
 
 process compileRawReadsQC {
 
-  label "align"
+  label "COVIRT_fastq_to_alignment"
 
   publishDir params.raw_multiqc_dir, mode: "copy"
 
@@ -54,7 +49,7 @@ params.trimmed_reads_dir = params.raw_reads_dir + "/trimmed_reads"
 
 process trimRawReads {
 
-  label "align"
+  label "COVIRT_fastq_to_alignment"
   
   publishDir params.trimmed_reads_dir, mode: "copy"
 
@@ -89,7 +84,7 @@ params.trimmed_fastqc_dir = params.trimmed_reads_dir + "/trimmed_fastqc"
 
 process createTrimmedReadsQC {
 
-  label "align"
+  label "COVIRT_fastq_to_alignment"
 
   publishDir params.trimmed_fastqc_dir, mode: "copy"
 
@@ -108,7 +103,7 @@ params.trimmed_multiqc_dir = params.trimmed_reads_dir + "/trimmed_multiqc"
 
 process compileTrimmedReadsQC {
 
-  label "align"
+  label "COVIRT_fastq_to_alignment"
 
   publishDir params.trimmed_multiqc_dir, mode: "copy"
 
@@ -154,15 +149,11 @@ process splitTrimmedReads {
   """
 }
 
-// TODO: Move into config file
-params.ensembl_data_dir = "/home/ubuntu/COV-IRT-Data"
-params.genome_dir = params.ensembl_data_dir + "/filtered"
-
 params.aligned_reads_dir = params.raw_reads_dir + "/aligned_reads"
 
 process alignReadsToReferenceGenome {
 
-  label "align"
+  label "COVIRT_fastq_to_alignment"
 
   publishDir params.aligned_reads_dir, mode: "copy"
 
@@ -307,7 +298,7 @@ params.NumberOfThreads = 16
 
 process sortAndIndexAlignedReads {
 
-  label "align"
+  label "COVIRT_fastq_to_alignment"
 
   publishDir params.aligned_reads_dir, mode: "copy"
 
