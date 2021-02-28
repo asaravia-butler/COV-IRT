@@ -122,6 +122,8 @@ params.split_reads_dir = params.raw_reads_dir + "/split_reads"
 
 process splitTrimmedReads {
 
+  // TODO: Specify Docker image?
+
   publishDir params.split_reads_dir, mode: "copy"
 
   input:
