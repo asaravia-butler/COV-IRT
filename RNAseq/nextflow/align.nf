@@ -161,6 +161,7 @@ process alignReadsToReferenceGenome {
 
   input:
     env sample from split_reads_sample_ch
+    file split_reads_json_file from split_reads_json_files_ch
 
   output:
     file "*ReadsPerGene.out.tab" into reads_counts_files_ch
