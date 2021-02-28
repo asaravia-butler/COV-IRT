@@ -210,7 +210,7 @@ process alignReadsToReferenceGenome {
 
       # Construct the read group line
       if [ -n "\${outSAMattrRGline}" ]; then
-        outSAMattrRGline="\${outSAMattrRGline} ,"
+        outSAMattrRGline="\${outSAMattrRGline} , "
       fi
       outSAMattrRGline="\${outSAMattrRGline}ID:\${flowcell}.\${lane} PL:ILLUMINA PU:\${flowcell}.\${lane}.\${barcode} LB:\${sample} SM:\${sample}"
     done
