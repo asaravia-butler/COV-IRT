@@ -1,4 +1,5 @@
 aligned_reads
+filtered_reads
 raw_fastqc
 raw_multiqc
 split_reads
