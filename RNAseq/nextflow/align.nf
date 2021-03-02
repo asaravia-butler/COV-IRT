@@ -151,6 +151,43 @@ process splitTrimmedReads {
   """
 }
 
+params.filtered_reads_dir = params.raw_reads_dir + "/filtered_reads"
+
+process filterSplitReads {
+
+  label "COVIRT_HTStream"
+
+  publishDir params.filtered_reads_dir, mode: "copy"
+
+  input:
+    env sample from split_reads_sample_ch
+    file split_reads_one_file from split_reads_one_files_ch
+    file split_reads_two_file from split_reads_two_files_ch
+
+  output:
+    env sample into filtered_reads_sample_ch
+    file "split_*_R1.fastq.gz" into filtered_reads_one_files_ch
+    file "split_*_R2.fastq.gz" into filtered_reads_two_files_ch
+    file "split_*.log" into filtered_reads_log_files_ch
+
+  """
+  for reads_one_file in `ls split_\${sample}_*_R1.fq.gz`; do
+    reads_two_file=`echo \${reads_one_file} | sed s/R1/R2/`
+    base_name=`echo \${reads_one_file} \
+      | sed s/_R1.fq.gz//`
+    # TODO: Need to get the reference file to the worker
+    hts_SeqScreener \
+      -L \${base_name}_htsStats.log \
+      -1 ${split_reads_one_file} \
+      -2 ${split_reads_two_file} \
+      -s ${params.COVIRT_home}/RNAseq/Reference_Files/Hsapiens_rRNA_RefSeq_seq_w_mitrRNA_ITS_ETS.fasta \
+      -x 0.20 \
+      -f \${base_name}
+
+  done
+  """
+}
+
 params.aligned_reads_dir = params.raw_reads_dir + "/aligned_reads"
 
 process alignReadsToReferenceGenome {
@@ -160,7 +197,7 @@ process alignReadsToReferenceGenome {
   publishDir params.aligned_reads_dir, mode: "copy"
 
   input:
-    env sample from split_reads_sample_ch
+    env sample from filtered_reads_sample_ch
     file split_reads_json_file from split_reads_json_files_ch
 
   output:
@@ -170,13 +207,13 @@ process alignReadsToReferenceGenome {
 
   """
   # Copy in reads files (can't use links anyway)
-  cp ${params.split_reads_dir}/split_\${sample}_*.fq.gz .
+  cp ${params.filtered_reads_dir}/split_\${sample}_*.fastq.gz .
 
   # Handle multiple flowcells per sample
   outSAMattrRGline=""
   readOneFilesIn=""
   readTwoFilesIn=""
-  for flowcell in `ls -1 split_\${sample}_*_R1.fq.gz \
+  for flowcell in `ls -1 split_\${sample}_*_R1.fastq.gz \
     | xargs -L 1 basename \
     | sed s/split_// \
     | sed s/\${sample}// \
@@ -184,7 +221,7 @@ process alignReadsToReferenceGenome {
     | uniq`; do
 
     # Handle multiple lanes per flowcell
-    for lane in `ls -1 split_\${sample}_\${flowcell}_*_R1.fq.gz \
+    for lane in `ls -1 split_\${sample}_\${flowcell}_*_R1.fastq.gz \
       | xargs -L 1 basename \
       | sed s/split_// \
       | sed s/\${sample}// \
@@ -195,11 +232,11 @@ process alignReadsToReferenceGenome {
       if [ -n "\${readOneFilesIn}" ]; then
         readOneFilesIn="\${readOneFilesIn},"
       fi
-      readOneFilesIn="\${readOneFilesIn}split_\${sample}_\${flowcell}_\${lane}_R1.fq.gz"
+      readOneFilesIn="\${readOneFilesIn}split_\${sample}_\${flowcell}_\${lane}_R1.fastq.gz"
       if [ -n "\${readTwoFilesIn}" ]; then
         readTwoFilesIn="\${readTwoFilesIn},"
       fi
-      readTwoFilesIn="\${readTwoFilesIn}split_\${sample}_\${flowcell}_\${lane}_R2.fq.gz"
+      readTwoFilesIn="\${readTwoFilesIn}split_\${sample}_\${flowcell}_\${lane}_R2.fastq.gz"
 
       # Find the multiplex barcode
       barcode=`grep "multiplex_barcode" split_\${sample}_\${flowcell}_\${lane}_R1.report.json \
