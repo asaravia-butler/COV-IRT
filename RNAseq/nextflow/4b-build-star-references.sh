@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO: Clean-up and document
+
 NumberOfThreads=64
 # TODO: Check read length
 ReadLengthM1=150

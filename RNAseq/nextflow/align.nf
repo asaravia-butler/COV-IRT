@@ -2,6 +2,7 @@
 
 // TODO: Understand data storage on NASA cluster
 
+// TODO: Move into config file
 params.raw_reads_dir = "/home/ubuntu/COV-IRT/RNAseq/Fastq_Input_Files_for_Testing"
 
 raw_reads_files_ch = Channel.fromPath(params.raw_reads_dir + "/*.fastq.gz")
@@ -133,8 +134,10 @@ process splitTrimmedReads {
     file trimmed_reads_two_file from trimmed_reads_two_files_ch
 
   output:
+    env sample into split_reads_sample_ch
     file "split_*_R1.fq.gz" into split_reads_one_files_ch
     file "split_*_R2.fq.gz" into split_reads_two_files_ch
+    file "split_*.json" into split_reads_json_files_ch
 
   """
   sample=`echo ${trimmed_reads_one_file} | sed s/_R1_P_trimmed.fq.gz//`
@@ -143,16 +146,17 @@ process splitTrimmedReads {
   rm ${trimmed_reads_two_file}
   cp ${params.trimmed_reads_dir}/${trimmed_reads_one_file} .
   cp ${params.trimmed_reads_dir}/${trimmed_reads_two_file} .
+
+  # Split reads
   docker run -v \${PWD}:/opt --rm \
     quay.io/kmhernan/gdc-fastq-splitter -o split_\${sample}_ \
     ${trimmed_reads_one_file} ${trimmed_reads_two_file}
   """
 }
 
+// TODO: Move into config file
 params.ensembl_data_dir = "/home/ubuntu/COV-IRT-Data"
 params.genome_dir = params.ensembl_data_dir + "/filtered"
-// TODO: Automate setting of this value
-params.index = 3
 
 params.aligned_reads_dir = params.raw_reads_dir + "/aligned_reads"
 
@@ -163,8 +167,7 @@ process alignReadsToReferenceGenome {
   publishDir params.aligned_reads_dir, mode: "copy"
 
   input:
-    file split_reads_one_file from split_reads_one_files_ch
-    file split_reads_two_file from split_reads_two_files_ch
+    env sample from split_reads_sample_ch
 
   output:
     file "*ReadsPerGene.out.tab" into reads_counts_files_ch
@@ -172,12 +175,55 @@ process alignReadsToReferenceGenome {
     file "*_Aligned.toTranscriptome.out.bam" into aligned_transcriptome_reads_files_ch
 
   """
-  sample=`echo ${split_reads_one_file} | sed s/split_// | sed s/_[a-zA-Z0-9]*_[0-9]*_R1.fq.gz//`
-  # Remove links and copy in reads files
-  rm ${split_reads_one_file}
-  rm ${split_reads_two_file}
-  cp ${params.split_reads_dir}/${split_reads_one_file} .
-  cp ${params.split_reads_dir}/${split_reads_two_file} .
+  # Copy in reads files (can't use links anyway)
+  cp ${params.split_reads_dir}/split_\${sample}_*.fq.gz .
+
+  # Handle multiple flowcells per sample
+  outSAMattrRGline=""
+  readOneFilesIn=""
+  readTwoFilesIn=""
+  for flowcell in `ls -1 split_\${sample}_*_R1.fq.gz \
+    | xargs -L 1 basename \
+    | sed s/split_// \
+    | sed s/\${sample}// \
+    | cut -d "_" -f 2 \
+    | uniq`; do
+
+    # Handle multiple lanes per flowcell
+    for lane in `ls -1 split_\${sample}_\${flowcell}_*_R1.fq.gz \
+      | xargs -L 1 basename \
+      | sed s/split_// \
+      | sed s/\${sample}// \
+      | cut -d "_" -f 3 \
+      | uniq`; do
+
+      # Construct the read file paths
+      if [ -n "\${readOneFilesIn}" ]; then
+        readOneFilesIn="\${readOneFilesIn},"
+      fi
+      readOneFilesIn="\${readOneFilesIn}split_\${sample}_\${flowcell}_\${lane}_R1.fq.gz"
+      if [ -n "\${readTwoFilesIn}" ]; then
+        readTwoFilesIn="\${readTwoFilesIn},"
+      fi
+      readTwoFilesIn="\${readTwoFilesIn}split_\${sample}_\${flowcell}_\${lane}_R2.fq.gz"
+
+      # Find the multiplex barcode
+      barcode=`grep "multiplex_barcode" split_\${sample}_\${flowcell}_\${lane}_R1.report.json \
+        | cut -d ":" -f 2 \
+        | sed s/\\"//g \
+        | sed s/,//g \
+        | xargs`
+
+      # Construct the read group line
+      if [ -n "\${outSAMattrRGline}" ]; then
+        outSAMattrRGline="\${outSAMattrRGline} ,"
+      fi
+      outSAMattrRGline="\${outSAMattrRGline}ID:\${flowcell}.\${lane} PL:ILLUMINA PU:\${flowcell}.\${lane}.\${barcode} LB:\${sample} SM:\${sample}"
+    done
+  done
+  readFilesIn="\${readOneFilesIn} \${readTwoFilesIn}"
+
+  # Align reads
   STAR \
     --twopassMode Basic \
     --limitBAMsortRAM 65000000000 \
@@ -185,9 +231,7 @@ process alignReadsToReferenceGenome {
     --outSAMunmapped Within \
     --outFilterType BySJout \
     --outSAMattributes NH HI AS nM NM MD jM jI MC ch \
-    --outSAMattrRGline \
-        ID:flowcell.laneX PL:ILLUMINA PU:flowcell.laneX.${params.index} LB:\${sample} SM:\${sample}, \
-        ID:flowcell.laneY PL:ILLUMINA PU:flowcell.laneY.${params.index} LB:\${sample} SM:\${sample} \
+    --outSAMattrRGline \${outSAMattrRGline} \
     --outFilterMultimapNmax 20 \
     --outFilterMismatchNmax 999 \
     --outFilterMismatchNoverReadLmax 0.04 \
@@ -205,8 +249,8 @@ process alignReadsToReferenceGenome {
     --outSAMtype BAM SortedByCoordinate \
     --quantMode TranscriptomeSAM GeneCounts \
     --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-    --outFileNamePrefix \${sample}_ \
-    --readFilesIn ${split_reads_one_file} ${split_reads_two_file}
+    --outFileNamePrefix \${sample}_\${flowcell}_ \
+    --readFilesIn \${readFilesIn}
   """
 }
 

@@ -1,0 +1,9 @@
+name: COVIRT_HTStream
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python
+  - boost
+  - htstream

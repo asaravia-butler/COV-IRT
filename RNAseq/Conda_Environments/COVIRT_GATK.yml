@@ -1,0 +1,6 @@
+name: COVIRT_GATK
+channels:
+  - bioconda
+
+dependencies:
+  - gatk4
