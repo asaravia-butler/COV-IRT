@@ -13,8 +13,8 @@ params.variant_calling_op_dir = "/data/home/snagar9/data/covirt-nextflow/data/va
 params.numberOfThreads = 16
 
 process markDuplicates {
-    // TODO: Uncomment
-    // label: "covirt_gatk"
+
+    label "COVIRT_GATK"
     
     publishDir params.variant_calling_op_dir, mode: "copy"
 
@@ -45,8 +45,8 @@ process markDuplicates {
 params.ref_genome = "~/data/covirt-nextflow/data/Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa"
 
 process splitReads {
-    // TODO: Uncomment
-    // label: "covirt_gatk"
+
+    label "COVIRT_GATK"
 
     publishDir params.variant_calling_op_dir, mode: "copy"
 
@@ -76,8 +76,8 @@ params.dbsnp_loc = "~/data/covirt-nextflow/data/dbSNP_v153_ens.vcf.gz"
 params.ref_genome_dict = "~/data/covirt-nextflow/data/Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.dict"
 
 process generateRecalTable {
-    // TODO: Uncomment
-    // label: "covirt_gatk"
+
+    label "COVIRT_GATK"
 
     publishDir params.variant_calling_op_dir, mode: "copy"
 
@@ -102,8 +102,8 @@ process generateRecalTable {
 }
 
 process compareBaseQualityScoreRecalTables {
-    // TODO: Uncomment
-    // label: "covirt_gatk"
+
+    label "COVIRT_GATK"
 
     publishDir params.variant_calling_op_dir, mode: "copy"
 
@@ -124,8 +124,8 @@ process compareBaseQualityScoreRecalTables {
 }
 
 process applyBQSR {
-    // TODO: Uncomment
-    // label: "covirt_gatk"
+
+    label "COVIRT_GATK"
 
     publishDir params.variant_calling_op_dir, mode: "copy"
 
@@ -151,8 +151,8 @@ process applyBQSR {
 }
 
 process callVariants {
-    // TODO: Uncomment
-    // label: "covirt_gatk"
+
+    label "COVIRT_GATK"
 
     publishDir params.variant_calling_op_dir, mode: "copy"
 
@@ -183,8 +183,8 @@ process callVariants {
 params.genomics_db = params.variant_calling_op_dir + "/genomics_db/"
 
 process makeGenomicsDB {
-    // TODO: Uncomment
-    // label: "covirt_gatk"
+
+    label "COVIRT_GATK"
 
     publishDir params.genomics_db, mode: "copy"
 
@@ -211,8 +211,8 @@ process makeGenomicsDB {
 }
 
 process jointGenotyping {
-  // TODO: Uncomment
-  // label: "covirt_gatk"
+
+  label "COVIRT_GATK"
 
   publishDir params.variant_calling_op_dir, mode: "copy"
 
@@ -234,8 +234,8 @@ process jointGenotyping {
 }
 
 process variantAnnotationFilter {
-  // TODO: Uncomment
-  // label: "covirt_gatk"
+
+  label "COVIRT_GATK"
 
   publishDir params.variant_calling_op_dir, mode: "copy"
 
@@ -262,8 +262,8 @@ process variantAnnotationFilter {
 }
 
 process combineVCFs {
-  // TODO: Uncomment
-  // label: "covirt_gatk"
+
+  label "COVIRT_GATK"
 
   publishDir params.variant_calling_op_dir, mode: "copy"
 

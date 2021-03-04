@@ -13,7 +13,8 @@ params.aligned_reads_count_dir = "/data/home/snagar9/data/covirt-nextflow/data/a
 params.numberOfThreads = 16
 
 process countAlignedReads {
-    label "covirt_rsem"
+
+    label "COVIRT_rsem"
 
     publishDir params.aligned_reads_count_dir, mode: "copy"
 
