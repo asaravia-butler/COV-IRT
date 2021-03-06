@@ -1,20 +1,23 @@
 #!/usr/bin/env nextflow
 
 // TODO: Update based on NASA storage conventions
-params.rsem_prefix = "/data/home/snagar9/data/covirt-nextflow/data/Homo_sapiens_GRCh38_rsem"
+// params.rsem_prefix = "/data/home/snagar9/data/covirt-nextflow/data/Homo_sapiens_GRCh38_rsem"
+params.rsem_prefix = params.Ensembl_data_dir + "/Homo_sapiens_and_Sars_cov_2_RSEMref"
 
 // TODO: Integrate into worflow so that the Channel doesn't need to be populated from a path
-aligned_reads_files_ch = Channel.fromPath("/data/home/snagar9/data/covirt-nextflow/data/Fastq_Input_Files_for_Testing/aligned_reads/*_Aligned.toTranscriptome.out.bam")
+// aligned_reads_files_ch = Channel.fromPath("/data/home/snagar9/data/covirt-nextflow/data/Fastq_Input_Files_for_Testing/aligned_reads/*_Aligned.toTranscriptome.out.bam")
+aligned_reads_files_ch = Channel.fromPath(params.raw_reads_dir + "/aligned_reads/*_Aligned.toTranscriptome.out.bam")
 
 // TODO: Change paths as needed
-params.aligned_reads_count_dir = "/data/home/snagar9/data/covirt-nextflow/data/aligned_reads_counts"
+// params.aligned_reads_count_dir = "/data/home/snagar9/data/covirt-nextflow/data/aligned_reads_counts"
+params.aligned_reads_count_dir = params.raw_reads_dir + "/aligned_reads_counts"
 
 // TODO: Automate setting of this value
 params.numberOfThreads = 16
 
 process countAlignedReads {
 
-    label "COVIRT_rsem"
+    // label "COVIRT_rsem"
 
     publishDir params.aligned_reads_count_dir, mode: "copy"
 
