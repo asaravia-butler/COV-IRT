@@ -287,6 +287,8 @@ process alignReadsToReferenceGenome {
 
 process generateStarCountsTable {
 
+  label "COVIRT_fastq_to_alignment"
+
   publishDir params.aligned_reads_dir, mode: "copy"
 
   input:
@@ -296,7 +298,7 @@ process generateStarCountsTable {
     file "*" into counts_table_file_ch
 
   """
-  #!/usr/bin/env r
+  #!/usr/bin/env Rscript
 
   print("Make STAR counts table")
   print("")

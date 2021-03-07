@@ -1,13 +1,15 @@
 #!/usr/bin/env nextflow
 
 // TODO: Update based on NASA storage conventions
-params.aligned_bams_dir = "/data/home/snagar9/data/covirt-nextflow/data/Fastq_Input_Files_for_Testing/aligned_reads_new/"
+// params.aligned_bams_dir = "/data/home/snagar9/data/covirt-nextflow/data/Fastq_Input_Files_for_Testing/aligned_reads_new/"
+params.aligned_bams_dir = params.raw_reads_dir + "/aligned_reads/"
 
 // TODO: Integrate into worflow so that the Channel doesn't need to be populated from a path
 aligned_reads_files_ch = Channel.fromPath(params.aligned_bams_dir + "*_Aligned.sortedByCoord_sorted.out.bam")
 
 // TODO: Change paths as needed
-params.variant_calling_op_dir = "/data/home/snagar9/data/covirt-nextflow/data/variant_calling"
+// params.variant_calling_op_dir = "/data/home/snagar9/data/covirt-nextflow/data/variant_calling"
+params.variant_calling_op_dir = params.raw_reads_dir + "/variant_calling"
 
 // TODO: Automate setting of this value
 params.numberOfThreads = 16
@@ -28,7 +30,6 @@ process markDuplicates {
 
     """
     sample=`echo ${aligned_reads_file} | sed 's/_Aligned.sortedByCoord_sorted.out.bam//'`
-
     echo Sample \$sample
 
     # Marking duplicate reads
@@ -220,6 +221,7 @@ process jointGenotyping {
     file genomics_db from genomics_db_ch
 
   output:
+    env chr_num into chr_num_ch  
     file "*Geno_out.vcf.gz" into joint_called_ch
 
   """
@@ -240,15 +242,13 @@ process variantAnnotationFilter {
   publishDir params.variant_calling_op_dir, mode: "copy"
 
   input:
+    env chr_num from chr_num_ch  
     file joint_called_vcf from joint_called_ch
 
   output:
     file "*VarFilt_output.vcf.gz" into annot_filtered_ch
 
   """
-  # Getting chromosome number
-  chr_num=`echo ${genomics_db} | sed 's/_Geno_out\.vcf\.gz//;'`
-
   gatk VariantFiltration -R ${params.ref_genome} \
     -V ${joint_called_vcf} \
     -O \${chr_num}_VarFilt_output.vcf.gz \

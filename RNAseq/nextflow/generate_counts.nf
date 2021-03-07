@@ -17,7 +17,7 @@ params.numberOfThreads = 16
 
 process countAlignedReads {
 
-    // label "COVIRT_rsem"
+    label "COVIRT_rsem"
 
     publishDir params.aligned_reads_count_dir, mode: "copy"
 
@@ -77,7 +77,7 @@ process generateRSEMCountsTables {
                     )
 
     # Getting samples names from files
-    // TODO: Define sample naming scheme - might have to change regex for this
+    # TODO: Define sample naming scheme - might have to change regex for this
     samples <- sub(".genes.results", "",
                     sub("split_", "", basename(gene_files))
                 )
@@ -89,7 +89,7 @@ process generateRSEMCountsTables {
     gene.txi.rsem <- tximport(gene_files, type = "rsem", txIn = FALSE, txOut = FALSE)
 
     # Writitng out data to report file
-    // TODO: Check whether output format needs to be cleaned up.  Currently has quotes.
+    # TODO: Check whether output format needs to be cleaned up.  Currently has quotes.
     write.csv(gene.txi.rsem\$counts, file='RSEM_Unnormalized_Gene_Counts.csv')
 
     # Repeat process with isoforms
