@@ -260,7 +260,7 @@ process alignReadsToReferenceGenome {
   echo "--outSAMattrRGline \${outSAMattrRGline}" >> \${sample}.log
   echo "--runThreadN ${params.numberOfThreads}" >> \${sample}.log
   echo "--outFileNamePrefix \${sample}_\${flowcell}_" >> \${sample}.log
-  echo "--readFilesIn \${readFilesI" >> \${sample}.log
+  echo "--readFilesIn \${readFilesIn}" >> \${sample}.log
   STAR \
     --twopassMode Basic \
     --limitBAMsortRAM 65000000000 \
@@ -286,7 +286,7 @@ process alignReadsToReferenceGenome {
     --outSAMtype BAM SortedByCoordinate \
     --quantMode TranscriptomeSAM GeneCounts \
     --outSAMheaderHD @HD VN:1.4 SO:coordinate \
-    --outFileNamePrefix \${sample}_\${flowcell}_ \
+    --outFileNamePrefix \${sample}_ \
     --readFilesIn \${readFilesIn}
   """
 }
