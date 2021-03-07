@@ -50,6 +50,8 @@ process countAlignedReads {
 
 process generateRSEMCountsTables {
 
+    label "COVIRT_rsem"
+
     publishDir params.aligned_reads_count_dir, mode: "copy"
 
     input:
