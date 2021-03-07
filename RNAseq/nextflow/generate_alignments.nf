@@ -204,6 +204,7 @@ process alignReadsToReferenceGenome {
     file "*ReadsPerGene.out.tab" into reads_counts_files_ch
     file "*_Aligned.sortedByCoord.out.bam" into aligned_reads_files_ch
     file "*_Aligned.toTranscriptome.out.bam" into aligned_transcriptome_reads_files_ch
+    file "*.log" into star_log_files_ch
 
   """
   # Copy in reads files (can't use links anyway)
@@ -255,6 +256,11 @@ process alignReadsToReferenceGenome {
   readFilesIn="\${readOneFilesIn} \${readTwoFilesIn}"
 
   # Align reads
+  echo "--genomeDir ${params.genome_dir}" >> \${sample}.log
+  echo "--outSAMattrRGline \${outSAMattrRGline}" >> \${sample}.log
+  echo "--runThreadN ${params.numberOfThreads}" >> \${sample}.log
+  echo "--outFileNamePrefix \${sample}_\${flowcell}_" >> \${sample}.log
+  echo "--readFilesIn \${readFilesI" >> \${sample}.log
   STAR \
     --twopassMode Basic \
     --limitBAMsortRAM 65000000000 \
