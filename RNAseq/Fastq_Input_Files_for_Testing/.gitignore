@@ -1,4 +1,5 @@
 aligned_reads
+aligned_reads_counts
 filtered_reads
 raw_fastqc
 raw_multiqc
