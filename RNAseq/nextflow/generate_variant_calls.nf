@@ -70,7 +70,7 @@ process splitReads {
 }
 
 // TODO: Change path
-params.indel_ref_loc = "~/data/covirt-nextflow/data/Homo_sapiens_assembly38.known_indels.vcf.gz"
+params.indel_ref_loc = "~/data/covirt-nextflow/data/Homo_sapiens_assembly38.known_indels.vcf"
 params.dbsnp_loc = "~/data/covirt-nextflow/data/dbSNP_v153_ens.vcf.gz"
 
 // TODO: Possible control flow for human-filtered or unfiltered analysis
@@ -221,7 +221,6 @@ process jointGenotyping {
     file genomics_db from genomics_db_ch
 
   output:
-    env chr_num into chr_num_ch  
     file "*Geno_out.vcf.gz" into joint_called_ch
 
   """
@@ -242,13 +241,13 @@ process variantAnnotationFilter {
   publishDir params.variant_calling_op_dir, mode: "copy"
 
   input:
-    env chr_num from chr_num_ch  
     file joint_called_vcf from joint_called_ch
 
   output:
     file "*VarFilt_output.vcf.gz" into annot_filtered_ch
 
   """
+  chr_num=`echo ${joint_called_vcf} | sed 's/_Geno_out\\.vcf\\.gz//'`
   gatk VariantFiltration -R ${params.ref_genome} \
     -V ${joint_called_vcf} \
     -O \${chr_num}_VarFilt_output.vcf.gz \
