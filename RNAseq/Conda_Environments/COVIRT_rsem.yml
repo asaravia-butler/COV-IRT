@@ -1,0 +1,6 @@
+name: COVIRT_rsem
+channels:
+  - bioconda
+
+dependencies:
+  - rsem

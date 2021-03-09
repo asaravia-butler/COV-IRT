@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+#PBS -S /bin/bash
+#PBS -l select=1:ncpus=24:model=has
+#PBS -l walltime=48:00:00
+#PBS -N COVIRT_RSEM_all_451-845
+#PBS -q covid19
+#PBS -J 451-845
+#PBS -m abe
+#PBS -j oe
+#PBS -koed
+
+cd $PBS_O_WORKDIR
+
+start=$(date +%s)
+echo "start time: $start"
+echo "ran on node: "
+cat $PBS_NODEFILE 
+echo "My PBS_ARRAY_INDEX_ID: " $PBS_ARRAY_INDEX
+
+in_dir=/path/to/COVIRT_all_data_rRNA_removed/02-AlignedData
+out_dir=/path/to/COVIRT_all_data_rRNA_removed/03-RSEMcountData
+
+REF=/path/to/RSEM_Indices/Homo_sapiens_and_SARS-CoV-2_ensembl/Hsapiens_SARS-CoV-2_ens
+GTF=/path/to/genome_files/Homo_sapiens/ensembl_release100/Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf
+
+sample=$(cat samples.txt | sed -n ${PBS_ARRAY_INDEX}p)
+
+echo "RSEM version: "
+rsem-calculate-expression --version
+
+echo "SAMPLE: ${sample}"
+
+call="rsem-calculate-expression --num-threads 24 \
+	--alignments \
+	--bam \
+	--paired-end \
+	--seed 12345 \
+	--estimate-rspd \
+	--no-bam-output \
+	--strandedness reverse \
+	--append-names \
+	$in_dir/${sample}/${sample}_Aligned.toTranscriptome.out.bam \
+	$REF \
+	$out_dir/${sample}"
+
+echo $call
+eval $call
+
+end=$(date +%s)
+echo "end time: $end"
+runtime_s=$(echo $(( end - start )))
+echo "total run time(s): $runtime_s"
+sec_per_min=60
+sec_per_hr=3600
+runtime_m=$(echo "scale=2; $runtime_s / $sec_per_min;" | bc)
+echo "total run time(m): $runtime_m"
+runtime_h=$(echo "scale=2; $runtime_s / $sec_per_hr;" | bc)
+echo "total run time(h): $runtime_h"

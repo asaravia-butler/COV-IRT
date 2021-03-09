@@ -17,15 +17,19 @@
     - [**2b. Trimmed Data QC**](#2b-trimmed-data-qc)
     - [**2c. Compile Trimmed Data QC**](#2c-compile-trimmed-data-qc)
   - [**3. Split Fastq Files Based on Sequencing Run/Lane**](#3-split-fastq-files-based-on-sequencing-runlane)
-  - [**4. Retrieve Genome/Annotation Files and Build STAR Reference**](#4-retrieve-genomeannotation-files-and-build-star-reference)
-    - [**4a. Get Genome and Annotation Files**](#4a-get-genome-and-annotation-files)
-    - [**4b. Build STAR Reference**](#4b-build-star-reference)
-  - [**5. Align Reads to Reference Genome with STAR and Generate STAR Counts Table**](#5-align-reads-to-reference-genome-with-star-and-generate-star-counts-table)
-    - [**5a. Align Reads to Reference Genome with STAR**](#5a-align-reads-to-reference-genome-with-star)
-    - [**5b. Generate STAR Counts Table in R**](#5b-generate-star-counts-table-in-r) 
-  - [**6. Sort and Index Genome-Aligned Data**](#6-sort-and-index-genome-aligned-data)
-    - [**6a. Sort Genome-Aligned Data**](#6a-sort-genome-aligned-data)
-    - [**6b. Index Sorted Genome-Aligned Data**](#6b-index-sorted-genome-aligned-data)
+  - [**4. Remove Ribosomal RNA Reads from Split Fastq Files**](#4-remove-ribosomal-rna-reads-from-split-fastq-files)
+  - [**5. Retrieve Genome/Annotation Files and Build STAR Reference**](#5-retrieve-genomeannotation-files-and-build-star-reference)
+    - [**5a. Get Genome and Annotation Files**](#5a-get-genome-and-annotation-files)
+    - [**5b. Build STAR Reference**](#5b-build-star-reference)
+  - [**6. Align Reads to Reference Genome with STAR and Generate STAR Counts Table**](#6-align-reads-to-reference-genome-with-star-and-generate-star-counts-table)
+    - [**6a. Align Reads to Reference Genome with STAR**](#6a-align-reads-to-reference-genome-with-star)
+    - [**6b. Generate STAR Counts Table in R**](#6b-generate-star-counts-table-in-r) 
+  - [**7. Sort and Index Genome-Aligned Data**](#7-sort-and-index-genome-aligned-data)
+    - [**7a. Sort Genome-Aligned Data**](#7a-sort-genome-aligned-data)
+    - [**7b. Index Sorted Genome-Aligned Data**](#7b-index-sorted-genome-aligned-data)
+  - [**8. Alignment Data QC**](#8-alignment-data-qc)
+    - [**8a. Create Reference Files**](#8a-create-reference-files)
+    - [**8b. Generate Alignment Data QC Metrics**](#8b-generate-alignment-data-qc-metrics)
 
 ---
 
@@ -41,8 +45,17 @@
 |gdc-fastq-splitter|`gdc-fastq-splitter --version`|[https://github.com/kmhernan/gdc-fastq-splitter](https://github.com/kmhernan/gdc-fastq-splitter)|
 |STAR|`STAR --version`|[https://github.com/alexdobin/STAR](https://github.com/alexdobin/STAR)|
 |Samtools|`samtools --version`|[http://www.htslib.org/](http://www.htslib.org/)|
+|HTStream|`hts_SeqScreener --version`|[https://s4hts.github.io/HTStream/](https://s4hts.github.io/HTStream/)|
+|gtfToGenePred|No `version` command listed|[https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html)
+|gatk|`gatk --version`|[https://gatk.broadinstitute.org/](https://gatk.broadinstitute.org/)|
 
 >**\*** Exact versions used to process specific cohorts are available in the [Exact_scripts_used](Exact_scripts_used) sub-directory. 
+>
+>**\*** All tools needed (except gdc-fastq-splitter) can be installed via conda with the following [conda environments](https://github.com/asaravia-butler/COV-IRT/tree/main/RNAseq/Conda_Environments):
+>  - COVIRT_GATK
+>  - COVIRT_HTStream
+>  - COVIRT_fastq_to_alignment
+>  - COVIRT_gtfToGenePred
 
 ---
 
@@ -191,9 +204,40 @@ gdc-fastq-splitter -o /path/to/ouput/split/trimmed/reads/${sample}/${sample}_ \
 
 <br>
 
-## 4. Retrieve Genome/Annotation Files and Build STAR Reference
+## 4. Remove Ribosomal RNA Reads from Split Fastq Files
 
-### 4a. Get Genome and Annotation Files 
+Create list of split fastq files for all samples that will be held in the ${sample_fqsplit} variable below:
+
+```
+ls -1 *flowcell_lane#_R1.fq.gz | sed "s/_R1.fq.gz//" > samples_fqsplit.txt
+```
+
+Remove rRNA reads from each fastq file listed in `samples_fqsplit.txt`
+
+```
+hts_SeqScreener -L /path/to/HTStream_logs/${sample_fqsplit}_htsStats.log \
+  -1 /path/to/split/trimmed/reads/${sample_fqsplit}_R1.fq.gz \
+  -2 /path/to/split/trimmed/reads/${sample_fqsplit}_R2.fq.gz \
+  -s /path/to/Hsapiens_rRNA_RefSeq_seq_w_mitrRNA_ITS_ETS.fasta \
+  -x 0.20 \
+  -f /path/to/ouput/rRNA-removed/split/trimmed/reads/${sample_fqsplit}
+```
+
+**Input Data:**
+- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+- Hsapiens_rRNA_RefSeq_seq_w_mitrRNA_ITS_ETS.fasta (fasta file containing rRNA genes as well as ITS1 and ITS2 and 5' and 3' ETS rRNA regions, and mitochondrial 12S and 16S genes - you can download this reference [here](https://github.com/asaravia-butler/COV-IRT/blob/main/RNAseq/Reference_Files/Hsapiens_rRNA_RefSeq_seq_w_mitrRNA_ITS_ETS.fasta))
+
+**Output Data:**
+- \*flowcell_lane#_R\*.fastq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number with rRNA reads removed)
+- \*flowcell_lane#_R\*.htsStats.log (rRNA removal report)
+
+---
+
+<br>
+
+## 5. Retrieve Genome/Annotation Files and Build STAR Reference
+
+### 5a. Get Genome and Annotation Files 
 
 Get human fasta and gtf files from [Ensembl](https://www.ensembl.org/) - used for processing human-filtered data and needed to process unfiltered data
 
@@ -221,7 +265,7 @@ zcat Homo_sapiens.GRCh38.100.gtf.gz Sars_cov_2.ASM985889v3.101.gtf.gz > Homo_sap
 
 <br>
 
-### 4b. Build STAR Reference  
+### 5b. Build STAR Reference  
 
 ```
 STAR --runThreadN NumberOfThreads \
@@ -268,9 +312,9 @@ STAR genome reference, which consists of the following files:
 
 <br>
 
-## 5. Align Reads to Reference Genome with STAR and Generate STAR Counts Table
+## 6. Align Reads to Reference Genome with STAR and Generate STAR Counts Table
 
-### 5a. Align Reads to Reference Genome with STAR
+### 6a. Align Reads to Reference Genome with STAR
 
 ```
 STAR --twopassMode Basic \
@@ -298,12 +342,14 @@ STAR --twopassMode Basic \
   --quantMode TranscriptomeSAM GeneCounts \
   --outSAMheaderHD @HD VN:1.4 SO:coordinate \
   --outFileNamePrefix /path/to/STAR/output/directory/${sample}/${sample}_ \
-  --readFilesIn /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R1.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R1.fq.gz /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R2.fq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R2.fq.gz
+  --readFilesIn /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R1.fastq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R1.fastq.gz /path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneX_R2.fastq.gz,/path/to/split/trimmed/reads/${sample}/${sample}_flowcell_laneY_R2.fastq.gz
 ```
 
 **Input Data:**
-- STAR genome reference (output from step 4b)
-- \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3)
+- STAR genome reference (output from step 5b)
+- \*flowcell_lane#_R\*.fastq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number with rRNA reads removed from step 4)
+  
+  Note: To process without removing rRNA reads, use \*flowcell_lane#_R\*.fq.gz (trimmed reads split according to flowcell (i.e. sequencing run) and lane number from step 3) as the input fastq files
 
 **Output Data:**
 - *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
@@ -326,7 +372,7 @@ STAR --twopassMode Basic \
 
 <br>
 
-### 5b. Generate STAR Counts Table in R
+### 6b. Generate STAR Counts Table in R
 
 ```R
 print("Make STAR counts table")
@@ -363,22 +409,21 @@ sessionInfo()
 ```
 
 **Input Data:**
-- *ReadsPerGene.out.tab (STAR read counts per gene from step 5a)
-- samples.txt (text file containing a single column list of all samples)
+- *ReadsPerGene.out.tab (STAR read counts per gene from step 6a)
+- samples.txt (text file containing a single column list of all samples generated in [step 0](#0-create-sample-list))
 
 **Output Data:**
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome)
 - STAR_Unnormalized_Counts.csv (table containing STAR read counts per gene for all samples)
 
 ---
 
 <br>
 
-## 6. Sort and Index Genome-Aligned Data
+## 7. Sort and Index Genome-Aligned Data
 
-Due to issues with the sorted genome bam file from STAR (step 5a) this file must be subsequently sorted and indexed with samtools prior to downstream analyses.
+Due to issues with the sorted genome bam file from STAR (step 6a) this file must be subsequently sorted and indexed with samtools prior to downstream analyses.
 
-### 6a. Sort Genome-Aligned Data
+### 7a. Sort Genome-Aligned Data
 
 ```
 samtools sort -m AvailableMemoryPerThread \
@@ -388,14 +433,14 @@ samtools sort -m AvailableMemoryPerThread \
 ```
 
 **Input Data:**
-- *Aligned.sortedByCoord.out.bam (sorted mapping to genome file from step 5a)
+- *Aligned.sortedByCoord.out.bam (sorted mapping to genome file from step 6a)
 
 **Output Data:**
 - *Aligned.sortedByCoord_sorted.out.bam (samtools sorted mapping to genome file)
 
 <br>
 
-### 6b. Index Sorted Genome-Aligned Data
+### 7b. Index Sorted Genome-Aligned Data
 
 ```
 samtools index -@ NumberOfThreads \
@@ -407,3 +452,69 @@ samtools index -@ NumberOfThreads \
 
 **Output Data:**
 - *Aligned.sortedByCoord_sorted.out.bam.bai (samtools sorted mapping to genome index)
+
+---
+
+<br>
+
+## 8. Alignment Data QC
+
+### 8a. Create Reference Files
+
+Reference files used can be found in the [Reference_Files](Reference_Files) sub-directory. The commands used to create these reference files are below:
+
+**Create refFlat Reference**
+
+```
+gtfToGenePred -genePredExt -geneNameAsName2 Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf refFlat.tmp.txt
+paste <(cut -f 12 refFlat.tmp.txt) <(cut -f 1-10 refFlat.tmp.txt) > Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt
+rm refFlat.tmp.txt
+```
+
+**Input Data:**
+- Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf (gtf file containing human and SARS-CoV-2 annotated genes from [step 5a](#5a-get-genome-and-annotation-files))
+
+**Output Data:**
+- Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt (gene annotations in refFlat format - you can download this reference [here](Reference_Files/Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt.gz))
+
+<br>
+
+**Define Genomic Location of rRNA Sequences in interval_list Format**
+
+```
+samtools view -H sample_Aligned.sortedByCoord_sorted.out.bam | grep '^@HD*' > Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt
+samtools view -H sample_Aligned.sortedByCoord_sorted.out.bam | grep '^@SQ*' >> Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt
+cat Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf | grep 'rRNA' | cut -s -f 1,4,5,7,9 >> Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt
+```
+
+**Input Data:**
+- sample_Aligned.sortedByCoord_sorted.out.bam (sorted bam file of one sample generated from the samtools sorted mapping to genome [step 7a](#7a-sort-genome-aligned-data); Note: In does not matter which sample you use since the @HD and @SQ lines will be the same for each sample)
+- Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf (gtf file containing human and SARS-CoV-2 annotated genes from [step 5a](#5a-get-genome-and-annotation-files))
+
+**Output Data:**
+- Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt (genomic locations of rRNA sequences in interval_list format - you can download this reference [here](Reference_Files/Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt))
+
+<br>
+
+### 8b. Generate Alignment Data QC Metrics
+
+Generate RNAseq metrics for each sample with [GATK CollectRnaSeqMetrics](https://gatk.broadinstitute.org/hc/en-us/articles/360037057492-CollectRnaSeqMetrics-Picard-)
+
+```
+gatk CollectRnaSeqMetrics -I /path/to/STAR/output/directory/${sample}/${sample}_Aligned.sortedByCoord_sorted.out.bam \
+  -O /path/to/STAR/output/directory/${sample}/${sample}_Metrics \
+  --REF_FLAT /path/to/Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt \
+  -STRAND SECOND_READ_TRANSCRIPTION_STRAND \
+  --METRIC_ACCUMULATION_LEVEL ALL_READS \
+  --RIBOSOMAL_INTERVALS /path/to/Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt
+```
+
+**Input Data:**
+- *Aligned.sortedByCoord_sorted.out.bam (samtools sorted mapping to genome file from step 7a)
+- Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt (gene annotations in refFlat format - you can download this reference [here](Reference_Files/Homo_sapiens.GRCh38_and_Sars_cov_2.ASM985889v3_refFlat.txt.gz))
+
+  Note: This file needs to be gunzipped prior to running this command.
+- Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt (genomic locations of rRNA sequences in interval_list format - you can download this reference [here](Reference_Files/Homo_sapiens.GRCh38.100_and_SARS-CoV-2_rRNA_interval_list.txt))
+
+**Output Data:**
+- \*_Metrics (file containing metrics about the alignment of RNAseq reads, complete list of metrics generated can be found [here](http://broadinstitute.github.io/picard/picard-metric-definitions.html#RnaSeqMetrics))
