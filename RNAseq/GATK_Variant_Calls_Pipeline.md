@@ -144,7 +144,7 @@ For processing unfiltered data
 Get human known indels file from the GATK resource bundle 
 
 ```
-wget https://console.cloud.google.com/storage/browser/_details/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.known_indels.vcf.gz
+wget https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.known_indels.vcf.gz
 ```
 
 Get human SNP database from [NCBI](https://www.ncbi.nlm.nih.gov/snp/)
