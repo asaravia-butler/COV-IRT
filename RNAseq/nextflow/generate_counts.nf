@@ -2,7 +2,7 @@
 
 // TODO: Update based on NASA storage conventions
 // params.rsem_prefix = "/data/home/snagar9/data/covirt-nextflow/data/Homo_sapiens_GRCh38_rsem"
-params.rsem_prefix = params.Ensembl_data_dir + "/Homo_sapiens_and_Sars_cov_2_RSEMref"
+params.rsem_prefix = params.COVIRT_Data + "/Homo_sapiens_and_Sars_cov_2_RSEMref"
 
 // TODO: Integrate into worflow so that the Channel doesn't need to be populated from a path
 // aligned_reads_files_ch = Channel.fromPath("/data/home/snagar9/data/covirt-nextflow/data/Fastq_Input_Files_for_Testing/aligned_reads/*_Aligned.toTranscriptome.out.bam")

@@ -43,7 +43,8 @@ process markDuplicates {
 }
 
 // TODO: Write possible control flow to choose either human-filtered reads or unfiltered data
-params.ref_genome = "~/data/covirt-nextflow/data/Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa"
+// params.ref_genome = "~/data/covirt-nextflow/data/Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa"
+params.ref_genome = params.COVIRT_Data + "/Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa"
 
 process splitReads {
 
@@ -70,11 +71,14 @@ process splitReads {
 }
 
 // TODO: Change path
-params.indel_ref_loc = "~/data/covirt-nextflow/data/Homo_sapiens_assembly38.known_indels.vcf"
-params.dbsnp_loc = "~/data/covirt-nextflow/data/dbSNP_v153_ens.vcf.gz"
+// params.indel_ref_loc = "~/data/covirt-nextflow/data/Homo_sapiens_assembly38.known_indels.vcf"
+params.indel_ref_loc = params.COVIRT_Data + "/Homo_sapiens_assembly38.known_indels.vcf.gz"
+// params.dbsnp_loc = "~/data/covirt-nextflow/data/dbSNP_v153_ens.vcf.gz"
+params.dbsnp_loc = params.COVIRT_Data + "/dbSNP_v153_ens.vcf.gz"
 
 // TODO: Possible control flow for human-filtered or unfiltered analysis
-params.ref_genome_dict = "~/data/covirt-nextflow/data/Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.dict"
+// params.ref_genome_dict = "~/data/covirt-nextflow/data/Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.dict"
+params.ref_genome_dict = params.COVIRT_Data + "/Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.dict"
 
 process generateRecalTable {
 
