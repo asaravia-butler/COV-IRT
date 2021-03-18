@@ -171,19 +171,33 @@ process filterSplitReads {
     file "split_*.log" into filtered_reads_log_files_ch
 
   """
-  for reads_one_file in `ls split_\${sample}_*_R1.fq.gz`; do
-    reads_two_file=`echo \${reads_one_file} | sed s/R1/R2/`
-    base_name=`echo \${reads_one_file} \
-      | sed s/_R1.fq.gz//`
-    # TODO: Need to get the reference file to the worker
-    hts_SeqScreener \
-      -L \${base_name}_htsStats.log \
-      -1 ${split_reads_one_file} \
-      -2 ${split_reads_two_file} \
-      -s ${params.COVIRT_home}/RNAseq/Reference_Files/Hsapiens_rRNA_RefSeq_seq_w_mitrRNA_ITS_ETS.fasta \
-      -x 0.20 \
-      -f \${base_name}
+  # Handle multiple flowcells per sample
+  for flowcell in `ls -1 split_\${sample}_*_R1.fq.gz \
+    | xargs -L 1 basename \
+    | sed s/split_// \
+    | sed s/\${sample}// \
+    | cut -d "_" -f 2 \
+    | uniq`; do
 
+    # Handle multiple lanes per flowcell
+    for lane in `ls -1 split_\${sample}_\${flowcell}_*_R1.fq.gz \
+      | xargs -L 1 basename \
+      | sed s/split_// \
+      | sed s/\${sample}// \
+      | cut -d "_" -f 3 \
+      | uniq`; do
+      reads_one_file="split_\${sample}_\${flowcell}_\${lane}_R1.fq.gz"
+      reads_two_file="split_\${sample}_\${flowcell}_\${lane}_R2.fq.gz"
+      base_name="split_\${sample}_\${flowcell}_\${lane}"
+      # TODO: Need to get the reference file to the worker
+      hts_SeqScreener \
+        -L \${base_name}_htsStats.log \
+        -1 \${reads_one_file} \
+        -2 \${reads_two_file} \
+        -s ${params.COVIRT_Code}/RNAseq/Reference_Files/Hsapiens_rRNA_RefSeq_seq_w_mitrRNA_ITS_ETS.fasta \
+        -x 0.20 \
+        -f \${base_name}
+    done
   done
   """
 }
