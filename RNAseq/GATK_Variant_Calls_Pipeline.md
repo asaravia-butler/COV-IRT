@@ -141,16 +141,18 @@ For processing unfiltered data
 
 ### 2a. Get Variant Call Reference Files  
 
-Get human known indels file from the GATK resource bundle 
+Get human known indels file and respective index from the GATK resource bundle 
 
 ```
 wget https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.known_indels.vcf.gz
+wget https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0/Homo_sapiens_assembly38.known_indels.vcf.gz.tbi
 ```
 
-Get human SNP database from [NCBI](https://www.ncbi.nlm.nih.gov/snp/)
+Get human SNP database and respective index from [NCBI](https://www.ncbi.nlm.nih.gov/snp/)
 
 ```
 wget https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-All.vcf.gz 
+wget https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-All.vcf.gz.tbi
 ```
 
 <br>
@@ -160,36 +162,32 @@ wget https://ftp.ncbi.nih.gov/snp/organisms/human_9606/VCF/00-All.vcf.gz
 Convert human known indels file to match Ensembl genome IDs
 
 ```
-java -jar fgbio-1.2.0.jar UpdateVcfContigNames -i Homo_sapiens_assembly38.known_indels.vcf.gz \
-  --skip-missing true \
+fgbio UpdateVcfContigNames -i Homo_sapiens_assembly38.known_indels.vcf.gz \
+  --skip-missing=true \
   -d ENS100_MN908947.3.dna.primary_assembly.dict \
   -o Homo_sapiens_assembly38.ens100.known_indels.vcf.gz
 ```
 
-```
-tabix -p vcf Homo_sapiens_assembly38.ens100.known_indels.vcf.gz
-```
 
 Convert human SNP database to match Ensembl genome IDs
 
 ```
-java -jar fgbio-1.2.0.jar UpdateVcfContigNames -i 00-All.vcf.gz \
-  --skip-missing true \
+fgbio UpdateVcfContigNames -i 00-All.vcf.gz \
+  --skip-missing=true \
   -d ENS100_MN908947.3.dna.primary_assembly.dict \
   -o dbSNP_v153_ens.vcf.gz
 ```
 
-```
-tabix -p vcf dbSNP_v153_ens.vcf.gz
-```
 
 **Input Data:**
 
 For human known indels 
 - Homo_sapiens_assembly38.known_indels.vcf.gz (human indels reference)
+* The human indels index file, `Homo_sapiens_assembly38.known_indels.vcf.gz.tbi`, must be in the same directory as the human indels reference file
 
 For human SNP database
 - 00-All.vcf.gz (human SNP database)
+* The human SNP database index file, `00-All.vcf.gz.tbi`, must be in the same directory as the human SNP database file
 
 **Output Data:**
 
