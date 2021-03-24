@@ -32,14 +32,14 @@ if [ ! -f "Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf" ]; then
 	 > Homo_sapiens.GRCh38.100_and_Sars_cov_2.ASM985889v3.100.gtf 
 fi
 
-conda activate COVIRT_fastq_to_alignment
-
 if [ ! -f "Homo_sapiens.GRCh38.dna.primary_assembly.fa" ]; then
     gunzip -k Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 fi
 if [ ! -f "Homo_sapiens.GRCh38.100.gtf" ]; then
     gunzip -k Homo_sapiens.GRCh38.100.gtf.gz
 fi
+
+conda activate COVIRT_fastq_to_alignment
 
 NumberOfThreads=16
 # TODO: Check read length
