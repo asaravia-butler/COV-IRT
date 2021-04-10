@@ -37,11 +37,11 @@ if [ ! -f "Homo_sapiens.GRCh38.dna.primary_assembly.fa" ]; then
     gunzip -k Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 fi
 
+conda activate COVIRT_GATK
+
 if [ ! -f "Homo_sapiens.GRCh38.dna.primary_assembly.fa.fai" ]; then
     samtools faidx Homo_sapiens.GRCh38.dna.primary_assembly.fa
 fi
-
-conda activate COVIRT_GATK
 
 if [ ! -f "Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa.fai" ]; then
     samtools faidx Homo_sapiens.GRCh38.dna.primary_assembly_and_Sars_cov_2.ASM985889v3.dna.primary_assembly.MN908947.3.fa
