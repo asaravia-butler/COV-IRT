@@ -1,7 +1,7 @@
 name: COVIRT_RNAseq_R_tools
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
   - conda-forge/label/broken
 

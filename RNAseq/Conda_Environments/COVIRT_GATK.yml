@@ -1,5 +1,6 @@
 name: COVIRT_GATK
 channels:
+  - conda-forge
   - bioconda
 
 dependencies:
