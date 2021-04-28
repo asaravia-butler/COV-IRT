@@ -204,11 +204,11 @@ process makeGenomicsDB {
     """
     # Generating sample map of all generated VCF files
     echo ${all_gvcfs} \
-    | sed 's/ /\\n/g' \
-    | grep chr${chr}.vcf.gz \
-    | awk 'BEGIN{OFS = "\t"} {sample = gensub(/_[[:alnum:]]+\\.vcf\\.gz/, "", \$1); print sample, \$1}' > sample_map_${chr}.txt
+        | sed 's/ /\\n/g' \
+        | grep _${chr}.vcf.gz \
+        | awk 'BEGIN{OFS = "\t"} {sample = gensub(/_[[:alnum:]]+\\.vcf\\.gz/, "", \$1); print sample, \$1}' > sample_map_${chr}.txt
     
-    gatk --java-options "-Xmx40G" GenomicsDBImport 
+    gatk --java-options "-Xmx40G" GenomicsDBImport \
     --sample-name-map sample_map_${chr}.txt \
     --genomicsdb-workspace-path ./${chr}_database \
     --intervals ${chr}
