@@ -5,3 +5,4 @@ raw_fastqc
 raw_multiqc
 split_reads
 trimmed_reads
+variant_calling
