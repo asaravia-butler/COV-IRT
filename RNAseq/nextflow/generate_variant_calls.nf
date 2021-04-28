@@ -72,7 +72,7 @@ process splitReads {
 
 // TODO: Change path
 // params.indel_ref_loc = "~/data/covirt-nextflow/data/Homo_sapiens_assembly38.known_indels.vcf"
-params.indel_ref_loc = params.COVIRT_Data + "/Homo_sapiens_assembly38.known_indels.vcf.gz"
+params.indel_ref_loc = params.COVIRT_Data + "/Homo_sapiens_assembly38.ens100.known_indels.vcf.gz"
 // params.dbsnp_loc = "~/data/covirt-nextflow/data/dbSNP_v153_ens.vcf.gz"
 params.dbsnp_loc = params.COVIRT_Data + "/dbSNP_v153_ens.vcf.gz"
 
