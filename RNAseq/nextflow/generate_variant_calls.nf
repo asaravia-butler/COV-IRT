@@ -146,7 +146,7 @@ process applyBQSR {
 
     echo Sample \$sample
 
-    ~/setups/gatk-4.0.10.1/gatk --java-options "-Xmx100G" ApplyBQSR -R ${params.ref_genome} \
+    gatk --java-options "-Xmx100G" ApplyBQSR -R ${params.ref_genome} \
         -I ${cigar_split_bam} \
         --bqsr-recal-file ${recal_table} \
         -O ./\${sample}_BSQR-applied.out.bam
