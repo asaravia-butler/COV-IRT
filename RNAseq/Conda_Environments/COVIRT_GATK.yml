@@ -3,6 +3,11 @@ channels:
   - conda-forge
   - bioconda
 
+# https://gatk.broadinstitute.org/hc/en-us/articles/360035889531-What-are-the-requirements-for-running-GATK-
 dependencies:
+  - r-base
+  - r-ggplot2
+  - r-gplots
+  - r-gsalib
   - samtools
   - gatk4
