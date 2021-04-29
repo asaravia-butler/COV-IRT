@@ -203,7 +203,7 @@ process makeGenomicsDB {
         file "*database" into genomics_db_ch
     
     """
-    # Generating sample map of all generated VCF files
+    # Generate sample map of all generated VCF files
     echo ${all_gvcfs} \
         | sed 's/ /\\n/g' \
         | grep _${chr}.vcf.gz \
