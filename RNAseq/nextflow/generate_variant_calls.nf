@@ -209,7 +209,8 @@ process makeGenomicsDB {
         | grep _${chr}.vcf.gz \
         | awk 'BEGIN{OFS = "\t"} {sample = gensub(/_[[:alnum:]]+\\.vcf\\.gz/, "", \$1); print sample, \$1}' > sample_map_${chr}.txt
     
-    gatk --java-options "-Xmx40G" GenomicsDBImport \
+    # TODO: Remove stacketrace on user exception
+    gatk --java-options "-Xmx40G -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" GenomicsDBImport \
     --sample-name-map sample_map_${chr}.txt \
     --genomicsdb-workspace-path ./${chr}_database \
     --intervals ${chr}
