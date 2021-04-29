@@ -56,7 +56,7 @@ process splitReads {
         file dupe_marked_bam from dupe_marked_bams_ch
     
     output:
-        file "*Split.bam" into cigar_split_bams_1_ch, cigar_split_bams_2_ch
+        file "*Split.bam" into cigar_split_bams_1_ch
     
     """
     sample=`echo ${dupe_marked_bam} | sed 's/_marked_duplicates.bam//'`
@@ -91,6 +91,7 @@ process generateRecalTable {
     
     output:
         file "*recal_data.table" into recal_tables_1_ch, recal_tables_2_ch
+        file cigar_split_bam into cigar_split_bams_2_ch
 
     """
     sample=`echo ${cigar_split_bam} | sed 's/_Split.bam//'`
