@@ -156,6 +156,10 @@ process applyBQSR {
 
 }
 
+chrs_1_ch = Channel.from(1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                         11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                         21, 22, "X", "Y", "MT")
+
 process callVariants {
 
     label "COVIRT_GATK"
@@ -164,7 +168,7 @@ process callVariants {
 
     input:
         // TODO: Check whether we're okay doing only autosomes
-        each chr from 1..22
+        each chr from chrs_1_ch
         file bqsr_bam from bqsr_bams_ch
     
     output:
@@ -188,6 +192,10 @@ process callVariants {
 
 params.genomics_db = params.variant_calling_op_dir + "/genomics_db/"
 
+chrs_2_ch = Channel.from(1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                         11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                         21, 22, "X", "Y", "MT")
+
 process makeGenomicsDB {
 
     label "COVIRT_GATK"
@@ -196,7 +204,7 @@ process makeGenomicsDB {
 
     input:
         // TODO: Check whether we're okay doing only autosomes
-        each chr from 1..22
+        each chr from chrs_2_ch
         file all_gvcfs from gvcf_ch.collect()
     
     output:
