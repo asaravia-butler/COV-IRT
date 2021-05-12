@@ -173,6 +173,8 @@ process callVariants {
     
     output:
         file "*vcf.gz" into gvcf_ch
+        file "*vcf.gz.tbi" into gvcf_tbi_ch
+
     """
     sample=`echo ${bqsr_bam} | sed 's/_BSQR-applied.out.bam//'`
 
@@ -206,6 +208,7 @@ process makeGenomicsDB {
         // TODO: Check whether we're okay doing only autosomes
         each chr from chrs_2_ch
         file all_gvcfs from gvcf_ch.collect()
+        file all_gvcf_tbis from gvcf_tbi_ch.collect()
     
     output:
         file "*database" into genomics_db_ch
@@ -217,16 +220,17 @@ process makeGenomicsDB {
         | grep _${chr}.vcf.gz \
         | awk 'BEGIN{OFS = "\t"} {sample = gensub(/_[[:alnum:]]+\\.vcf\\.gz/, "", \$1); print sample, \$1}' > sample_map_${chr}.txt
     
-    for gvcf in ${all_gvcfs}; do
-        tabix -p vcf \${gvcf}
-    done
-
     # TODO: Remove stacketrace on user exception
     gatk --java-options "-Xmx40G -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" GenomicsDBImport \
         --sample-name-map sample_map_${chr}.txt \
         --genomicsdb-workspace-path ./${chr}_database \
         --intervals ${chr}
     """
+    /*
+    for gvcf in ${all_gvcfs}; do
+        tabix -p vcf \${gvcf}
+    done
+    */
 }
 
 process jointGenotyping {
@@ -240,6 +244,7 @@ process jointGenotyping {
 
   output:
     file "*Geno_out.vcf.gz" into joint_called_ch
+    file "*Geno_out.vcf.gz.tbi" into joint_called_tbi_ch
 
   """
   # Getting chromosome number
@@ -260,13 +265,14 @@ process variantAnnotationFilter {
 
   input:
     file joint_called_vcf from joint_called_ch
+    file joint_called_vcf_tbi from joint_called_tbi_ch
 
   output:
     file "*VarFilt_output.vcf.gz" into annot_filtered_ch
+    file "*VarFilt_output.vcf.gz.tbi" into annot_filtered_tbi_ch
 
   """
   chr_num=`echo ${joint_called_vcf} | sed 's/_Geno_out\\.vcf\\.gz//'`
-  tabix -p vcf ${joint_called_vcf}
   gatk VariantFiltration -R ${params.ref_genome} \
     -V ${joint_called_vcf} \
     -O \${chr_num}_VarFilt_output.vcf.gz \
@@ -277,6 +283,9 @@ process variantAnnotationFilter {
     --filter-name "QD" \
     --filter "QD < 2.0"
   """
+  /*
+  tabix -p vcf ${joint_called_vcf}
+  */
 }
 
 process combineVCFs {
@@ -287,6 +296,7 @@ process combineVCFs {
 
   input:
     file all_filt_vcfs from annot_filtered_ch.collect()
+    file all_filt_vcf_tbis from annot_filtered_tbi_ch.collect()
 
   output:
     file "merged_chr.vcf.gz" into merged_vcf_ch
@@ -295,7 +305,6 @@ process combineVCFs {
   for gvcf in ${all_filt_vcfs}; do
     echo \${gvcf} >> filt_vcfs.list
   done
-
   gatk MergeVcfs \
     --INPUT filt_vcfs.list \
     --SEQUENCE_DICTIONARY ${params.ref_genome_dict} \
