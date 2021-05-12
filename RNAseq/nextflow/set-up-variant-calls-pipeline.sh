@@ -79,4 +79,16 @@ fi
 
 conda deactivate
 
+conda activate COVIRT_fgbio
+
+if [ ! -f "Homo_sapiens_assembly38.ens100.known_indels.vcf.gz.tbi" ]; then
+    tabix -p vcf Homo_sapiens_assembly38.ens100.known_indels.vcf.gz
+fi
+
+if [ ! -f "dbSNP_v153_ens.vcf.gz.tbi" ]; then
+    tabix -p vcf dbSNP_v153_ens.vcf.gz
+fi
+
+conda deactivate
+
 popd
