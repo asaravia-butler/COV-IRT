@@ -361,7 +361,7 @@ For processing unfiltered data
 ```
 gatk --java-options "-Xmx100G" HaplotypeCaller -R $genome_ref/*.fa \
   -I $inter_dir/${sample}/${sample}_BSQR-applied.out.bam \
-  -O $out_dir/${sample}/${chr}/${sample}_${chr}.vcf.gz \
+  -O $out_dir/${sample}/chr${chr}/${sample}_chr${chr}.vcf.gz \
   -ERC GVCF \
   --dont-use-soft-clipped-bases \
   --standard-min-confidence-threshold-for-calling 20 \
@@ -391,12 +391,12 @@ For processing unfiltered data
 
 ```
 gatk --java-options "-Xmx40G" GenomicsDBImport -V $out_dir/sample1/${chr}/sample1_${chr}.vcf.gz \
-  -V $out_dir/sample2/${chr}/sample2_${chr}.vcf.gz \
-  -V $out_dir/sample3/${chr}/sample3_${chr}.vcf.gz \
+  -V $out_dir/sample2/chr${chr}/sample2_chr${chr}.vcf.gz \
+  -V $out_dir/sample3/chr${chr}/sample3_chr${chr}.vcf.gz \
   <…> \
-  -V $out_dir/sample731/${chr}/sample731_${chr}.vcf.gz \
-  -V $out_dir/sample732/${chr}/sample732_${chr}.vcf.gz \
-  --genomicsdb-workspace-path $out_dir/GVCF_databases/${chr}_database \
+  -V $out_dir/sample731/chr${chr}/sample731_chr${chr}.vcf.gz \
+  -V $out_dir/sample732/chr${chr}/sample732_chr${chr}.vcf.gz \
+  --genomicsdb-workspace-path $out_dir/GVCF_databases/chr${chr}_database \
   --intervals ${chr}
 ```
 
@@ -415,10 +415,10 @@ gatk --java-options "-Xmx40G" GenomicsDBImport -V $out_dir/sample1/${chr}/sample
 
 ```
 gatk --java-options "-Xmx40G" GenotypeGVCFs -R $genome_ref/*.fa \
-  -V gendb://$out_dir/GVCF_databases/${chr}_database \
+  -V gendb://$out_dir/GVCF_databases/chr${chr}_database \
   -G StandardAnnotation \
   -G AS_StandardAnnotation \
-  -O $out_dir/all_samples/${chr}/${chr}_Geno_out.vcf.gz
+  -O $out_dir/all_samples/chr${chr}/chr${chr}_Geno_out.vcf.gz
 ```
 
 **Input Data:**
@@ -442,8 +442,8 @@ For processing unfiltered data
 
 ```
 gatk VariantFiltration -R $genome_ref/*.fa \
-  -V $out_dir/all_samples/${chr}/${chr}_Geno_out.vcf.gz \
-  -O $out_dir/all_samples/${chr}/${chr}_VarFilt_output.vcf.gz \
+  -V $out_dir/all_samples/chr${chr}/chr${chr}_Geno_out.vcf.gz \
+  -O $out_dir/all_samples/chr${chr}/chr${chr}_VarFilt_output.vcf.gz \
   --window 35 \
   --cluster 3 \
   --filter-name "FS" \
