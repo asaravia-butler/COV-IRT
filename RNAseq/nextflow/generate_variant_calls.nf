@@ -217,11 +217,15 @@ process makeGenomicsDB {
         | grep _${chr}.vcf.gz \
         | awk 'BEGIN{OFS = "\t"} {sample = gensub(/_[[:alnum:]]+\\.vcf\\.gz/, "", \$1); print sample, \$1}' > sample_map_${chr}.txt
     
+    for gvcf in ${all_gvcfs}; do
+        tabix -p vcf \${gvcf}
+    done
+
     # TODO: Remove stacketrace on user exception
     gatk --java-options "-Xmx40G -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" GenomicsDBImport \
-    --sample-name-map sample_map_${chr}.txt \
-    --genomicsdb-workspace-path ./${chr}_database \
-    --intervals ${chr}
+        --sample-name-map sample_map_${chr}.txt \
+        --genomicsdb-workspace-path ./${chr}_database \
+        --intervals ${chr}
     """
 }
 
@@ -241,7 +245,7 @@ process jointGenotyping {
   # Getting chromosome number
   chr_num=`echo ${genomics_db} | sed 's/_database//; s/chr//'`
   gatk --java-options "-Xmx40G" GenotypeGVCFs -R ${params.ref_genome} \
-   -V ${genomics_db} \
+   -V gendb://${genomics_db} \
    -G StandardAnnotation \
    -G AS_StandardAnnotation \
    -O ./\${chr_num}_Geno_out.vcf.gz
@@ -262,6 +266,7 @@ process variantAnnotationFilter {
 
   """
   chr_num=`echo ${joint_called_vcf} | sed 's/_Geno_out\\.vcf\\.gz//'`
+  tabix -p vcf ${joint_called_vcf}
   gatk VariantFiltration -R ${params.ref_genome} \
     -V ${joint_called_vcf} \
     -O \${chr_num}_VarFilt_output.vcf.gz \
@@ -287,14 +292,24 @@ process combineVCFs {
     file "merged_chr.vcf.gz" into merged_vcf_ch
 
   """
-   # Writing a sub-script to add all files
-    echo "gatk MergeVcfs --SEQUENCE_DICTIONARY ${params.ref_genome_dict} --OUTPUT merged_chr.vcf.gz " > combine_script.sh
+  for gvcf in ${all_filt_vcfs}; do
+    echo \${gvcf} >> filt_vcfs.list
+  done
+
+  gatk MergeVcfs \
+    --INPUT filt_vcfs.list \
+    --SEQUENCE_DICTIONARY ${params.ref_genome_dict} \
+    --OUTPUT merged_chr.vcf.gz
+  """
+  /*
+  # Writing a sub-script to add all files
+  echo "gatk MergeVcfs --SEQUENCE_DICTIONARY ${params.ref_genome_dict} --OUTPUT merged_chr.vcf.gz " > combine_script.sh
 
   # Generating sample map of all generated VCF files
     echo ${all_filt_vcfs} \
     | sed 's/ /\\n/g' \
     | awk '{print "--INPUT", \$1, " "}' >> combine_script.sh
 
-  shell ombine_script.sh
-  """
+  bash combine_script.sh
+  */
 }
