@@ -1,15 +1,11 @@
 #!/usr/bin/env nextflow
 
-// TODO: Update based on NASA storage conventions
-// params.rsem_prefix = "/data/home/snagar9/data/covirt-nextflow/data/Homo_sapiens_GRCh38_rsem"
 params.rsem_prefix = params.COVIRT_Data + "/Homo_sapiens_and_Sars_cov_2_RSEMref"
 
 // TODO: Integrate into worflow so that the Channel doesn't need to be populated from a path
 // aligned_reads_files_ch = Channel.fromPath("/data/home/snagar9/data/covirt-nextflow/data/Fastq_Input_Files_for_Testing/aligned_reads/*_Aligned.toTranscriptome.out.bam")
 aligned_reads_files_ch = Channel.fromPath(params.raw_reads_dir + "/aligned_reads/*_Aligned.toTranscriptome.out.bam")
 
-// TODO: Change paths as needed
-// params.aligned_reads_count_dir = "/data/home/snagar9/data/covirt-nextflow/data/aligned_reads_counts"
 params.aligned_reads_count_dir = params.raw_reads_dir + "/aligned_reads_counts"
 
 // TODO: Automate setting of this value
@@ -22,11 +18,11 @@ process countAlignedReads {
     publishDir params.aligned_reads_count_dir, mode: "copy"
 
     input:
-      file aligned_reads_file from aligned_reads_files_ch
+    file aligned_reads_file from aligned_reads_files_ch
 
     output:
-      file "*genes.results" into rsem_gene_counts_ch
-      file "*isoforms.results" into rsem_isoform_counts_ch
+    file "*genes.results" into rsem_gene_counts_ch
+    file "*isoforms.results" into rsem_isoform_counts_ch
 
     """
     sample=`echo ${aligned_reads_file} | sed 's/_Aligned.toTranscriptome.out.bam//'`
@@ -55,11 +51,11 @@ process generateRSEMCountsTables {
     publishDir params.aligned_reads_count_dir, mode: "copy"
 
     input:
-      file "*" from rsem_gene_counts_ch.collect()
+    file "*" from rsem_gene_counts_ch.collect()
     
     output:
-      file "*Gene_Counts.csv" into gene_counts_table_file_ch
-      file "*Isoform_Counts.csv" into isoform_counts_table_file_ch
+    file "*Gene_Counts.csv" into gene_counts_table_file_ch
+    file "*Isoform_Counts.csv" into isoform_counts_table_file_ch
 
     """
     #!/usr/bin/env Rscript
@@ -73,16 +69,16 @@ process generateRSEMCountsTables {
 
     # Importing files matching pattern "*.genes.results"
     gene_files <- list.files(
-                    path = "${params.aligned_reads_count_dir}", 
-                    pattern = ".genes.results", 
-                    full.name = T
-                    )
+        path = "${params.aligned_reads_count_dir}", 
+        pattern = ".genes.results", 
+        full.name = T
+    )
 
     # Getting samples names from files
     # TODO: Define sample naming scheme - might have to change regex for this
     samples <- sub(".genes.results", "",
-                    sub("split_", "", basename(gene_files))
-                )
+        sub("split_", "", basename(gene_files))
+    )
 
     # Naming files by sample name
     names(gene_files) <- samples
@@ -96,14 +92,14 @@ process generateRSEMCountsTables {
 
     # Repeat process with isoforms
     isoform_files <- list.files(
-                        path = "${params.aligned_reads_count_dir}", 
-                        pattern = ".isoforms.results", 
-                        full.name = T
-                        )
+        path = "${params.aligned_reads_count_dir}", 
+        pattern = ".isoforms.results", 
+        full.name = T
+    )
 
     samples <- sub(".isoforms.results", "",
-                    sub("split_", "", basename(isoform_files))
-                )
+        sub("split_", "", basename(isoform_files))
+    )
     
     names(isoform_files) <- rownames(samples)
 
