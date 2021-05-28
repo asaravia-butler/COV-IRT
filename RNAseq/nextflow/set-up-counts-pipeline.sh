@@ -5,7 +5,8 @@
 set -ex
 
 REPO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd | xargs dirname | xargs dirname )"
-DATA_DIR="$( dirname $REPO_DIR )/COV-IRT-Data"
+# DATA_DIR="$( dirname $REPO_DIR )/COV-IRT-Data"
+DATA_DIR="/nobackupp13/rleclai2/COV-IRT-Data"
 
 mkdir -p $DATA_DIR
 pushd $DATA_DIR

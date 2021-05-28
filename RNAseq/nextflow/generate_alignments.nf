@@ -122,7 +122,7 @@ params.split_reads_dir = params.raw_reads_dir + "/split_reads"
 
 process splitTrimmedReads {
 
-  // TODO: Specify Docker image?
+  label "gdc_fastq_splitter"
 
   publishDir params.split_reads_dir, mode: "copy"
 
@@ -138,15 +138,17 @@ process splitTrimmedReads {
 
   """
   sample=`echo ${trimmed_reads_one_file} | sed s/_R1_P_trimmed.fq.gz//`
+
   # Remove links and copy in reads files
-  rm ${trimmed_reads_one_file}
-  rm ${trimmed_reads_two_file}
-  cp ${params.trimmed_reads_dir}/${trimmed_reads_one_file} .
-  cp ${params.trimmed_reads_dir}/${trimmed_reads_two_file} .
+  # rm ${trimmed_reads_one_file}
+  # rm ${trimmed_reads_two_file}
+  # cp ${params.trimmed_reads_dir}/${trimmed_reads_one_file} .
+  # cp ${params.trimmed_reads_dir}/${trimmed_reads_two_file} .
 
   # Split reads
-  docker run -v \${PWD}:/opt --rm \
-    quay.io/kmhernan/gdc-fastq-splitter -o split_\${sample}_ \
+  # docker run -v \${PWD}:/opt --rm \
+  # quay.io/kmhernan/
+  gdc-fastq-splitter -o split_\${sample}_ \
     ${trimmed_reads_one_file} ${trimmed_reads_two_file}
   """
 }
