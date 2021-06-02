@@ -1,15 +1,16 @@
 #!/usr/bin/env nextflow
 
-params.rsem_prefix = params.COVIRT_Data + "/Homo_sapiens_and_Sars_cov_2_RSEMref"
+params.rsem_prefix = params.COVIRT_Data + "/RSEM_Indices/Homo_sapiens_and_SARS-CoV-2_ensembl/Hsapiens_SARS-CoV-2_ens"
+//params.aligned_bams_dir = params.COVIRT_Code + "/02-AlignedData"
 
 // TODO: Integrate into worflow so that the Channel doesn't need to be populated from a path
 // aligned_reads_files_ch = Channel.fromPath("/data/home/snagar9/data/covirt-nextflow/data/Fastq_Input_Files_for_Testing/aligned_reads/*_Aligned.toTranscriptome.out.bam")
-aligned_reads_files_ch = Channel.fromPath(params.raw_reads_dir + "/aligned_reads/*_Aligned.toTranscriptome.out.bam")
+aligned_reads_files_ch = Channel.fromPath(params.COVIRT_Code + "/02-AlignedData/*/*_Aligned.toTranscriptome.out.bam")
 
-params.aligned_reads_count_dir = params.raw_reads_dir + "/aligned_reads_counts"
+params.aligned_reads_count_dir = params.COVIRT_Code + "/03-RSEMcountData"
 
 // TODO: Automate setting of this value
-params.numberOfThreads = 16
+params.numberOfThreads = 10
 
 process countAlignedReads {
 
@@ -38,9 +39,9 @@ process countAlignedReads {
         --no-bam-output \
         --strandedness reverse \
         --append-names \
-            ${aligned_reads_file} \
-            ${params.rsem_prefix} \
-            ./\${sample}
+        ${aligned_reads_file} \
+        ${params.rsem_prefix} \
+        ./\${sample}
     """
 }
 
@@ -58,7 +59,7 @@ process generateRSEMCountsTables {
     file "*Isoform_Counts.csv" into isoform_counts_table_file_ch
 
     """
-    #!/usr/bin/env Rscript
+    #!/usr/local/bin/Rscript
 
     # Importing required library
     library(tximport)
