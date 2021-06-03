@@ -55,7 +55,8 @@ process trimRawReads {
 
     label "COVIRT_fastq_to_alignment"
   
-    publishDir params.trimmed_reads_dir, mode: "copy"
+    publishDir params.trimmed_reads_dir, mode: "copy", pattern: "*_trimmed.fq.gz"
+    publishDir params.trimmed_logs_dir, mode: "copy", pattern: "*_trimming*"
 
     input:
     set sample, file(raw_reads_file_pair) from raw_reads_file_pairs_ch
@@ -65,20 +66,22 @@ process trimRawReads {
     file "*_U_trimmed.fq.gz" into trimmed_U_reads_files_ch
     file "*_R1_P_trimmed.fq.gz" into trimmed_reads_one_files_ch
     file "*_R2_P_trimmed.fq.gz" into trimmed_reads_two_files_ch
+    file "*_trimming*" into trimming_log_files_ch
+
 
     """
     trimmomatic PE \
         -threads ${params.numberOfThreads} \
         -phred33 \
-        -trimlog ${params.trimmed_logs_dir}/${sample}_trimming.log \
-        -summary ${params.trimmed_logs_dir}/${sample}_trimming_summary.txt \
+        -trimlog ${sample}_trimming.log \
+        -summary ${sample}_trimming_summary.txt \
         -validatePairs \
         ${raw_reads_file_pair} \
         ${sample}_R1_P_trimmed.fq.gz \
         ${sample}_R1_U_trimmed.fq.gz \
         ${sample}_R2_P_trimmed.fq.gz \
         ${sample}_R2_U_trimmed.fq.gz \
-        ILLUMINACLIP:TruSeq3-PE-2.fa:2:30:10:2:keepBothReads \
+        ILLUMINACLIP:${params.trimmomatic_adapters}/TruSeq3-PE-2.fa:2:30:10:2:keepBothReads \
         LEADING:20 \
         TRAILING:20 \
         MINLEN:15
@@ -173,7 +176,7 @@ params.split_reads_dir = params.trimmed_data_dir + "/Fastq_RG"
 
 process splitTrimmedReads {
 
-    label "gdc_fastq_splitter"
+    label "COVIRT_fq_splitter"
 
     publishDir params.split_reads_dir, mode: "copy"
 
@@ -192,7 +195,8 @@ process splitTrimmedReads {
   echo Sample \$sample
 
   mkdir \${sample}
-
+  # Activate gdc-fastq-splitter
+  source /Users/asaravia/Desktop/Logyx_NASA/GeneLab/COVID19/NASA_HEC_analyses/Pipelines/GitHub_COV-IRT_Pipeline/Conda_Environments/gdc-fastq-splitter/venv/bin/activate
   # Remove links and copy in reads files
   # rm ${trimmed_reads_one_file}
   # rm ${trimmed_reads_two_file}
@@ -204,6 +208,9 @@ process splitTrimmedReads {
   # quay.io/kmhernan/
   gdc-fastq-splitter -o \${sample}/split_\${sample}_ \
     ${trimmed_reads_one_file} ${trimmed_reads_two_file}
+
+  # Deactivate gdc-fastq-splitter
+  deactivate
   """
 }
 
@@ -227,13 +234,13 @@ process filterSplitReads {
     env sample into filtered_reads_sample_ch
     file "*/split_*_R1.fastq.gz" into filtered_reads_one_files_ch
     file "*/split_*_R2.fastq.gz" into filtered_reads_two_files_ch
-    file "*/split_*.log" into filtered_reads_log_files_ch
+    file "split_*.log" into filtered_reads_log_files_ch
 
     """
     mkdir \${sample}
 
     # Handle multiple flowcells per sample
-    for flowcell in `ls -1 \${sample}/split_\${sample}_*_R1.fq.gz \
+    for flowcell in `ls -1 split_\${sample}_*_R1.fq.gz \
         | xargs -L 1 basename \
         | sed s/split_// \
         | sed s/\${sample}// \
@@ -241,15 +248,15 @@ process filterSplitReads {
         | uniq`; do
 
         # Handle multiple lanes per flowcell
-        for lane in `ls -1 \${sample}/split_\${sample}_\${flowcell}_*_R1.fq.gz \
+        for lane in `ls -1 split_\${sample}_\${flowcell}_*_R1.fq.gz \
             | xargs -L 1 basename \
             | sed s/split_// \
             | sed s/\${sample}// \
             | cut -d "_" -f 3 \
             | uniq`; do
-            reads_one_file="\${sample}/split_\${sample}_\${flowcell}_\${lane}_R1.fq.gz"
-            reads_two_file="\${sample}/split_\${sample}_\${flowcell}_\${lane}_R2.fq.gz"
-            base_name="\${sample}/split_\${sample}_\${flowcell}_\${lane}"
+            reads_one_file="split_\${sample}_\${flowcell}_\${lane}_R1.fq.gz"
+            reads_two_file="split_\${sample}_\${flowcell}_\${lane}_R2.fq.gz"
+            base_name="split_\${sample}_\${flowcell}_\${lane}"
             # TODO: Need to get the reference file to the worker
             hts_SeqScreener \
                 -L \${base_name}_htsStats.log \
