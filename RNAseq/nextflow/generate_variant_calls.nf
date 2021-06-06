@@ -230,16 +230,27 @@ process makeGenomicsDB {
     
     """
     # Generate sample map of all generated VCF files
-    echo ${all_gvcfs} \
-        | tr ' ' '\n' \
-        | grep _chr${chr}.vcf.gz > chr${chr}_column2.txt
-
-    echo ${all_gvcfs} \
-        | tr ' ' '\n' \
-        | grep _chr${chr}.vcf.gz \
-        | awk -F_chr '{sub("_chr"\$NF,""); print}' > chr${chr}_column1.txt
-
-    paste -d"\t" chr${chr}_column1.txt chr${chr}_column2.txt > sample_map_${chr}.txt
+    # TODO: Cleanup
+    # echo ${all_gvcfs} \
+    #     | tr ' ' '\n' \
+    #     | grep _chr${chr}.vcf.gz > chr${chr}_column2.txt
+    # echo ${all_gvcfs} \
+    #     | tr ' ' '\n' \
+    #     | grep _chr${chr}.vcf.gz \
+    #     | awk -F_chr '{sub("_chr"\$NF,""); print}' > chr${chr}_column1.txt
+    # paste -d"\t" chr${chr}_column1.txt chr${chr}_column2.txt 
+    # Notes:
+    # - This is not tested in nextflow ... but I expect it to work on
+    #   both macOS and Linux since tested at command line
+    # - Not sure if nextflow honors the directory structure when
+    #   making links in the work directory, either way, this should
+    #   work
+    for gvcf in `echo ${all_gvcfs} \
+        | tr " " "\n" \
+        | grep "_chr${chr}"`; do
+        sample=`basename \${gvcf} | sed s/.vcf.gz//`
+        echo \${sample} \${gvcf} >> sample_map_${chr}.txt
+    done
     
     # TODO: Remove stacketrace on user exception
     gatk --java-options "-Xmx40G -DGATK_STACKTRACE_ON_USER_EXCEPTION=true" GenomicsDBImport \
